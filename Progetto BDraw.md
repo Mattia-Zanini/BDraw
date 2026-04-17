@@ -98,14 +98,13 @@ Il concetto di brachistocrona è stato esteso ben oltre il caso del campo gravit
 
 ### Prestazioni, Responsività e Logging
 
-- Il loop di simulazione deve avvenire a una frequenza di ~60 FPS (circa 16ms per frame) gestendo correttamente il delta time (tempo virtuale) per permettere alla finestra dell'applicazione di rimanere responsiva
+- Il loop di simulazione deve essere eseguito con una frequenza tale da garantire la massima fluidità, gestendo correttamente il delta time per mantenere la finestra dell'applicazione responsiva.
 - Il sistema deve fornire informazioni di debug su console tramite la libreria `spdlog` configurata adeguatamente
 
 ### Calcolo e Simulazione Fisica
 
 - Il tempo teorico è calcolato in modo esatto sulla spezzata: poiché la curva è costante a tratti su ogni segmento, la formula di Galileo fornisce il valore preciso senza approssimazioni numeriche
 - La posizione della pallina in ciascun frame deve essere determinata collegando il tempo fisico reale con il fluire dei frame, garantendo coerenza fisica nella visualizzazione
-- Il percorso disegnato deve essere sufficientemente lungo per rendere apprezzabile la differenza visiva e temporale tra le diverse curve confrontate
 
 ### Elaborazione e Rendering
 
