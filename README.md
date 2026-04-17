@@ -29,7 +29,7 @@ Al momento, il software è stato testato e validato esclusivamente su **macOS**.
 
 Per una corretta configurazione del progetto e delle sue dipendenze, si consiglia di utilizzare uno dei seguenti ambienti:
 
-1. **Qt Creator**: È l'approccio più diretto. È sufficiente aprire il file `CMakeLists.txt` e configurare il progetto utilizzando un Kit basato su Qt 6.*
+1. **Qt Creator**: È l'approccio più diretto. È sufficiente aprire il file `CMakeLists.txt` e configurare il progetto utilizzando un Kit basato su Qt 6 (vedi requisiti)
 2. **Visual Studio Code**: Utilizzando l'estensione **CMake Tools**. Assicurarsi che il percorso di installazione di Qt sia correttamente configurato nelle impostazioni di CMake o nelle variabili d'ambiente.
 
 ## Documentazione e Approfondimenti
