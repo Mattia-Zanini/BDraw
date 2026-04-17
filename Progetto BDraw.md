@@ -14,7 +14,9 @@ Il problema della brachistocrona, dalla parola greca composta *brákhistos* (β�
 
 #### La formulazione di Galileo (1638)
 
-Il problema fu formulato per la prima volta da Galileo Galilei nel 1638. Nel suo studio sul moto dei corpi, Galileo si chiese quale fosse la curva lungo la quale un punto materiale, scorrendo senza attrito sotto l'azione della gravità costante, impiegasse il tempo minimo per percorrere la distanza tra due punti fissati. Per motivi estetici e per la mancanza di strumenti matematici appropriati, dato che il calcolo infinitesimale era ancora agli albori, Galileo congetturò erroneamente che la soluzione fosse un arco di circonferenza. Questa ipotesi, sebbene sbagliata, non era irragionevole: come mostrato da Buttazzo e Mintchev, il tempo di percorrenza lungo la cicloide è solo circa il 96% di quello della semicirconferenza, un errore sorprendentemente contenuto.
+Il problema fu formulato per la prima volta da Galileo Galilei nel 1638. Nel suo studio sul moto dei corpi, Galileo si chiese quale fosse la curva lungo la quale un punto materiale, scorrendo senza attrito sotto l'azione della gravità costante, impiegasse il tempo minimo per percorrere la distanza tra due punti fissati. Per motivi estetici e per la mancanza di strumenti matematici appropriati, dato che il calcolo infinitesimale era ancora agli albori, Galileo congetturò erroneamente che la soluzione fosse un arco di circonferenza. 
+
+Questa ipotesi, sebbene sbagliata, non era irragionevole: come mostrato da Buttazzo e Mintchev, l'errore di valutazione di Galileo era sorprendentemente contenuto. In particolare, considerando il percorso necessario per tornare alla stessa altezza iniziale ($H=0$), il tempo di percorrenza lungo la cicloide è circa il **96%** di quello impiegato lungo una semicirconferenza. Questo rende l'intuizione di Galileo molto vicina alla soluzione ottimale dal punto di vista numerico, nonostante l'errore concettuale sulla forma della curva.
 
 #### La sfida di Johann Bernoulli (1696)
 
