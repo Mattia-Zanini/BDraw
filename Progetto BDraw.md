@@ -55,7 +55,7 @@ $$
 che rappresenta il tempo totale di percorrenza. Dall'equazione di Eulero-Lagrange (nella forma integrata di DuBois-Reymond) si ottiene:
 
 $$
-(1 + |u'(x)|^2) \, u(x) = 2c
+(1 + |u'(x)|^2) \ u(x) = 2c
 $$
 
 Questa equazione differenziale non lineare portò alla soluzione cicloidale. Il tempo di percorrenza lungo la cicloide risulta circa il 16% inferiore rispetto al percorso rettilineo tra gli stessi due punti.
