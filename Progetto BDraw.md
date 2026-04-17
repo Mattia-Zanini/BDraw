@@ -80,7 +80,7 @@ Il concetto di brachistocrona è stato esteso ben oltre il caso del campo gravit
 ### Curve Predefinite e Calcolo Teorico
 
 - Il sistema deve poter generare percorsi predefiniti: linea retta e cicloide
-- Il sistema deve calcolare il tempo teorico di percorrenza sulla spezzata disegnata applicando la formula di Galileo
+- Il sistema deve calcolare il tempo teorico di percorrenza sulla spezzata disegnata
 
 ### Simulazione Fisica
 
