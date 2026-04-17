@@ -1,0 +1,11 @@
+{
+  "name": "bdraw",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "spdlog",
+    {
+      "name": "openblas",
+      "platform": "!osx"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+bisogna utilizzare il cmd di qt msvc, poi si esegue il seguente comando sull'.exe posizionato dentro una cartella diversa e da solo!
+
+windeployqt --release --compiler-runtime --no-translations BDraw.exe

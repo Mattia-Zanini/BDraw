@@ -1,0 +1,142 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(BDraw VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+
+set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR})
+
+# 1. Trova i pacchetti necessari
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(spdlog CONFIG REQUIRED)
+
+# 2. Scarica dipendenze esterne
+include(FetchContent)
+FetchContent_Declare(
+  libassert
+  GIT_REPOSITORY https://github.com/jeremy-rifkin/libassert.git
+  GIT_TAG        v2.2.1
+)
+FetchContent_MakeAvailable(libassert)
+
+# 3. Definisci i file sorgente
+set(TS_FILES BDraw_it_IT.ts)
+set(PROJECT_SOURCES
+    src/main.cpp
+    src/mainwindow.cpp
+    src/cartesianView.cpp
+    include/mainwindow.h
+    include/cartesianView.h
+    mainwindow.ui
+    ${TS_FILES}
+)
+
+# 4. CREA IL TARGET (Questo deve stare PRIMA di ogni target_include_directories)
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(BDraw
+        MANUAL_FINALIZATION
+        ${PROJECT_SOURCES}
+    )
+    qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+else()
+    if(ANDROID)
+        add_library(BDraw SHARED ${PROJECT_SOURCES})
+    else()
+        add_executable(BDraw ${PROJECT_SOURCES})
+    endif()
+    qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
+endif()
+
+# 5. CONFIGURA IL TARGET (Ora che BDraw esiste, possiamo aggiungere impostazioni)
+target_include_directories(BDraw PRIVATE include)
+
+# --- Configurazione Specifica per Windows (Armadillo Header-Only) ---
+if(WIN32)
+    message(STATUS "Windows detected: Using Manual Header-Only setup for Armadillo")
+    
+    # Assicurati che questo percorso sia corretto sul tuo disco
+    set(ARMADILLO_MANUAL_INCLUDE_DIR "C:/armadillo/include")
+    
+    target_include_directories(BDraw PRIVATE ${ARMADILLO_MANUAL_INCLUDE_DIR})
+    
+    target_compile_definitions(BDraw PRIVATE ARMA_USE_LAPACK ARMA_USE_BLAS)
+    
+    find_package(OpenBLAS CONFIG REQUIRED)
+    target_link_libraries(BDraw PRIVATE OpenBLAS::OpenBLAS)
+    message(STATUS "Windows: Linking OpenBLAS for Armadillo support")
+else()
+    # Configurazione per macOS e Linux
+    find_package(Armadillo REQUIRED)
+    if(TARGET Armadillo::Armadillo)
+        target_link_libraries(BDraw PRIVATE Armadillo::Armadillo)
+    else()
+        target_link_libraries(BDraw PRIVATE ${ARMADILLO_LIBRARIES})
+        target_include_directories(BDraw PRIVATE ${ARMADILLO_INCLUDE_DIRS})
+    endif()
+
+    if(APPLE)
+        find_library(ACCELERATE_FRAMEWORK Accelerate REQUIRED)
+        target_link_libraries(BDraw PRIVATE ${ACCELERATE_FRAMEWORK})
+        message(STATUS "macOS detected: Linking Accelerate framework")
+    else()
+        find_package(OpenBLAS CONFIG REQUIRED)
+        target_link_libraries(BDraw PRIVATE OpenBLAS::OpenBLAS)
+        message(STATUS "Linux detected: Linking OpenBLAS from VCPKG")
+    endif()
+endif()
+
+# --- Collegamento altre librerie ---
+target_link_libraries(BDraw PRIVATE 
+    Qt${QT_VERSION_MAJOR}::Widgets
+    spdlog::spdlog
+    libassert::assert
+)
+
+# --- Proprietà Bundle e Installazione ---
+if(${QT_VERSION} VERSION_LESS 6.1.0)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.BDraw)
+endif()
+
+set_target_properties(BDraw PROPERTIES
+    ${BUNDLE_ID_OPTION}
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+include(GNUInstallDirs)
+install(TARGETS BDraw
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_DIR}
+)
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(BDraw)
+endif()
+
+# --- Post-Build Commands ---
+if(WIN32)
+  add_custom_command(
+    TARGET BDraw POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:libassert::assert>
+    $<TARGET_FILE_DIR:BDraw>
+  )
+endif()
+
+if(APPLE)
+  add_custom_command(
+    TARGET BDraw
+    POST_BUILD
+    COMMAND dsymutil $<TARGET_FILE:BDraw>
+  )
+endif()
