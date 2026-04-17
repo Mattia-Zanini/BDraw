@@ -39,5 +39,5 @@ Per una trattazione dettagliata dei requisiti funzionali, dell'analisi matematic
 **[Progetto BDraw.md](Progetto%20BDraw.md)**
 
 ---
-*Autore: Mattia*  
+*Autore: Mattia Zanini*  
 *Università degli Studi di Padova - Ingegneria Informatica*
