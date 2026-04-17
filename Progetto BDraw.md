@@ -46,10 +46,10 @@ dove la costante $c$ e il parametro $\tau$ sono determinati dalle condizioni al 
 
 #### Nascita del calcolo delle variazioni
 
-Il problema della brachistocrona è probabilmente il primo problema di calcolo delle variazioni in dimensione infinita. La formulazione matematica richiede di minimizzare il funzionale:
+Il problema della brachistocrona è probabilmente il primo problema di calcolo delle variazioni in dimensione infinita. La formulazione matematica richiede di minimizzare:
 
 $$
-T(u) = \frac{1}{\sqrt{2g}} \int_{x_1}^{x_2} \sqrt{\frac{1 + |u'(x)|^2}{u(x)}} \, dx
+T(u) = \frac{1}{\sqrt{2g}} \int_{0}^{L} \sqrt{\frac{1 + |u'(x)|^2}{u(x)}} \, dx
 $$
 
 che rappresenta il tempo totale di percorrenza. Dall'equazione di Eulero-Lagrange (nella forma integrata di DuBois-Reymond) si ottiene:
