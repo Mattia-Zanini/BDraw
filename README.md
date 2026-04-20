@@ -34,7 +34,7 @@ Per una corretta configurazione del progetto e delle sue dipendenze, si consigli
 
 ## Documentazione e Approfondimenti
 
-Per una trattazione dettagliata dei requisiti funzionali, dell'analisi matematica del problema, della storia della brachistocrona e delle scelte architettoniche del software, si rimanda alla documentazione completa (report di progetto) disponibile nel file:
+Per una trattazione dettagliata dei requisiti funzionali, dell'analisi matematica del problema, della storia della brachistocrona e delle scelte architettoniche del software, si rimanda alla documentazione completa disponibile nel file:
 
 **[Progetto BDraw.md](LaTeX/Progetto_BDraw.pdf)**
 

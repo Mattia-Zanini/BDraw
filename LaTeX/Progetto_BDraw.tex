@@ -1,13 +1,12 @@
 \documentclass[a4paper,12pt]{article}
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[greek,italian]{babel}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{hyperref}
-\usepackage{geometry}
-\usepackage{enumitem}
-\usepackage{textgreek}
+\usepackage[T1]{fontenc}         % Codifica dei font in uscita (migliora la sillabazione e i caratteri speciali)
+\usepackage[greek,italian]{babel} % Supporto multilingua: italiano come principale, greco per i termini etimologici
+\usepackage{amsmath}              % Estensioni matematiche standard della American Mathematical Society
+\usepackage{amssymb}              % Simboli matematici aggiuntivi
+\usepackage{geometry}             % Permette la personalizzazione dei margini e del layout della pagina
+\usepackage{enumitem}             % Fornisce un controllo avanzato sugli ambienti di lista (itemize, enumerate)
+\usepackage{textgreek}            % Permette di inserire lettere greche nel testo normale senza l'ambiente matematico
 
 \geometry{margin=1in}
 
@@ -33,13 +32,13 @@ Per realizzare questo obiettivo, l'applicazione mette a disposizione un'area di 
 
 Il problema della brachistocrona, dalla parola greca composta \textit{brákhistos} (\foreignlanguage{greek}{βράχιστος}, ``il più breve'') e \textit{khrónos} (\foreignlanguage{greek}{χρόνος}, ``tempo''), rappresenta una delle pietre miliari della storia della matematica e del calcolo delle variazioni.
 
-\subsubsection{La formulazione di Galileo (1638)}
+\subsection{La formulazione di Galileo (1638)}
 
 Il problema fu formulato per la prima volta da Galileo Galilei nel 1638. Nel suo studio sul moto dei corpi, Galileo si chiese quale fosse la curva lungo la quale un punto materiale, scorrendo senza attrito sotto l'azione della gravità costante, impiegasse il tempo minimo per percorrere la distanza tra due punti fissati. Per motivi estetici e per la mancanza di strumenti matematici appropriati, dato che il calcolo infinitesimale era ancora agli albori, Galileo congetturò erroneamente che la soluzione fosse un arco di circonferenza. 
 
 Questa ipotesi, sebbene sbagliata, non era irragionevole: come mostrato da Buttazzo e Mintchev, l'errore di valutazione di Galileo era sorprendentemente contenuto. In particolare, considerando il percorso necessario per tornare alla stessa altezza iniziale ($H=0$), il tempo di percorrenza lungo la cicloide è circa il \textbf{96\%} di quello impiegato lungo una semicirconferenza. Questo rende l'intuizione di Galileo molto vicina alla soluzione ottimale dal punto di vista numerico, nonostante l'errore concettuale sulla forma della curva.
 
-\subsubsection{La sfida di Johann Bernoulli (1696)}
+\subsection{La sfida di Johann Bernoulli (1696)}
 
 La soluzione corretta arrivò quasi sessant'anni dopo, quando nel giugno 1696 Johann Bernoulli lanciò una sfida pubblica ai matematici di tutta Europa, pubblicando il problema sulla rivista \textit{Acta Eruditorum} di Lipsia. La risposta non si fece attendere: entro la fine del 1697, soluzioni furono proposte da alcuni dei più grandi studiosi dell'epoca:
 
@@ -53,7 +52,7 @@ La soluzione corretta arrivò quasi sessant'anni dopo, quando nel giugno 1696 Jo
 
 Ognuno di questi matematici utilizzò metodi diversi, ma il vero valore di questa competizione intellettuale non fu solo la risposta in sé. La brachistocrona è storicamente significativa perché \textbf{per risolvere questo problema furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti}. La necessità di trovare una curva che minimizzasse un funzionale (e non semplicemente un numero) richiese un salto concettuale che portò alla nascita del calcolo delle variazioni.
 
-\subsubsection{La soluzione: un arco di cicloide}
+\subsection{La soluzione: un arco di cicloide}
 
 La soluzione si rivelò essere un \textbf{arco di cicloide}, la curva descritta da un punto fisso su una circonferenza che rotola senza strisciare lungo una retta. La soluzione in forma parametrica è:
 
@@ -67,7 +66,7 @@ y(t) = c(1 - \cos t)
 
 dove la costante $c$ e il parametro $\tau$ sono determinati dalle condizioni al contorno.
 
-\subsubsection{Nascita del calcolo delle variazioni}
+\subsection{Nascita del calcolo delle variazioni}
 
 Il problema della brachistocrona è probabilmente il primo problema di calcolo delle variazioni in dimensione infinita. La formulazione matematica richiede di minimizzare:
 
