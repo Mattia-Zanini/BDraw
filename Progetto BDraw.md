@@ -98,7 +98,7 @@ Il concetto di brachistocrona è stato esteso ben oltre il caso del campo gravit
 
 ### Prestazioni, Responsività e Logging
 
-- Il loop di simulazione deve essere eseguito con una frequenza tale da garantire la massima fluidità, gestendo correttamente il delta time per mantenere la finestra dell'applicazione responsiva.
+- Il loop di simulazione deve essere eseguito con una frequenza tale da garantire fluidità, per mantenere la finestra dell'applicazione responsiva.
 - Il sistema deve fornire informazioni di debug su console tramite la libreria `spdlog` configurata adeguatamente
 
 ### Calcolo e Simulazione Fisica
