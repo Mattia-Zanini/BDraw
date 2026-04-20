@@ -62,10 +62,6 @@ Questa equazione differenziale non lineare portò alla soluzione cicloidale. Il 
 
 L'importanza storica di questo risultato va ben oltre la risposta specifica: le tecniche sviluppate per la brachistocrona gettarono le basi per intere nuove branche della matematica applicata, con applicazioni che spaziano dalla fisica teorica all'ingegneria, dalla robotica alla teoria del controllo ottimo.
 
-#### Generalizzazioni
-
-Il concetto di brachistocrona è stato esteso ben oltre il caso del campo gravitazionale costante. Nel lavoro di Buttazzo e Mintchev, il problema è stato generalizzato a campi di gravità newtoniani, incluso il celebre "tunnel brachistocrono" attraverso la Terra: un ipotetico treno che viaggiasse senza attrito sotto l'effetto della sola gravità tra due città impiegherebbe soltanto circa 11 minuti lungo la curva ottimale, contro i 42 minuti del percorso rettilineo, raggiungendo velocità superiori a 7000 km/h.
-
 ## Requisiti Funzionali
 
 ### Input e Disegno

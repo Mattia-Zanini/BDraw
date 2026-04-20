@@ -103,3 +103,12 @@ Temporary Items
 build/
 bin/
 files_md/
+
+### LaTeX ###
+LaTeX/*.aux
+LaTeX/*.fdb_latexmk
+LaTeX/*.fls
+LaTeX/*.log
+LaTeX/*.out
+LaTeX/*.synctex.gz
+LaTeX/*.toc
