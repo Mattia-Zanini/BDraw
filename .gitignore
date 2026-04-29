@@ -105,10 +105,18 @@ bin/
 files_md/
 
 ### LaTeX ###
-LaTeX/*.aux
-LaTeX/*.fdb_latexmk
-LaTeX/*.fls
-LaTeX/*.log
-LaTeX/*.out
-LaTeX/*.synctex.gz
-LaTeX/*.toc
+LaTeX\ Tesi/*.aux
+LaTeX\ Tesi/*.fdb_latexmk
+LaTeX\ Tesi/*.fls
+LaTeX\ Tesi/*.log
+LaTeX\ Tesi/*.out
+LaTeX\ Tesi/*.synctex.gz
+LaTeX\ Tesi/*.toc
+
+# files tesi
+materiale_per_tesi/
+
+# Doxygen files
+latex/
+html/
+

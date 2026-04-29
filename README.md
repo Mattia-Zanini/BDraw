@@ -20,8 +20,8 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
 - **Build System**: CMake 3.16+.
 - **Framework UI**: [Qt 6.10+](https://www.qt.io/) (consigliata l'ultima versione stabile).
 - **Librerie esterne**:
-  - [Armadillo](https://arma.sourceforge.net/) (per il calcolo numerico).
-  - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
+  - [Armadillo](https://arma.sourceforge.net/) 15.2.6 (per il calcolo numerico).
+  - [spdlog](https://github.com/gabime/spdlog) 1.17.0 (per il logging di sistema).
 
 Al momento, il software è stato testato e validato esclusivamente su **macOS**.
 
@@ -32,11 +32,44 @@ Per una corretta configurazione del progetto e delle sue dipendenze, si consigli
 1. **Qt Creator**: È l'approccio più diretto. È sufficiente aprire il file `CMakeLists.txt` e configurare il progetto utilizzando un Kit basato su Qt 6 (vedi requisiti)
 2. **Visual Studio Code**: Utilizzando l'estensione **CMake Tools**. Assicurarsi che il percorso di installazione di Qt sia correttamente configurato nelle impostazioni di CMake o nelle variabili d'ambiente.
 
+### Build da riga di comando
+
+È possibile compilare il progetto direttamente da terminale utilizzando CMake:
+
+```bash
+# 1. Crea una directory di build (mantiene il progetto pulito)
+mkdir -p build && cd build
+
+# 2. Configura il progetto generando i file di build
+cmake ..
+
+# 3. Compila il progetto
+cmake --build .
+```
+
+### Esecuzione
+
+Una volta completata la compilazione, puoi avviare l'applicazione (solo su macOS):
+
+```bash
+./BDraw.app/Contents/MacOS/BDraw
+```
+
+### Documentazione Doxygen
+
+Per generare la documentazione del codice sorgente con Doxygen:
+
+```bash
+doxygen doxyconfig
+```
+
+Verrà generata la documentazione nelle cartelle `html/` e `latex/`.
+
 ## Documentazione e Approfondimenti
 
 Per una trattazione dettagliata dei requisiti funzionali, dell'analisi matematica del problema, della storia della brachistocrona e delle scelte architettoniche del software, si rimanda alla documentazione completa disponibile nel file:
 
-**[Progetto BDraw.md](LaTeX/Progetto_BDraw.pdf)**
+**[Progetto BDraw.md](LaTeX%20Tesi/Progetto_BDraw.pdf)**
 
 ---
 *Autore: Mattia Zanini*  

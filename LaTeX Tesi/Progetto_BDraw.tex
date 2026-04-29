@@ -1,0 +1,180 @@
+\documentclass[a4paper,12pt]{article} % Imposta il tipo di documento, formato carta e dimensione base del font
+
+% --- GESTIONE LINGUE E CARATTERI ---
+\usepackage[LGR,T1]{fontenc}      % Mappa i caratteri in uscita (T1 per l'italiano/europeo, LGR per il greco)
+\usepackage[utf8]{inputenc}       % Gestisce la codifica del file sorgente (permette di scrivere direttamente à, è, ì)
+\usepackage[greek,italian]{babel} % Adatta sillabazione e nomi predefiniti (es. "Capitolo") alle lingue scelte
+\usepackage{textalpha}            % Permette di inserire lettere greche direttamente nel testo, senza ambiente matematico
+
+% --- MATEMATICA E FONT ---
+\usepackage{amsmath}              % Fornisce strumenti avanzati per scrivere formule matematiche
+\usepackage{newtxtext,newtxmath}  % 1.  Cambia il font del documento e della matematica in stile "Times"
+
+% 2.    DOPO diciamo a LaTeX di usare il Computer Modern (cmr) per il greco
+%       al posto della famiglia di newtxtext (ntxtlf) che non ha quei glifi
+\DeclareFontFamilySubstitution{LGR}{ntxtlf}{cmr}
+
+\usepackage{xcolor}               % Gestione dei colori
+\definecolor{firebrick}{rgb}{0.6, 0, 0} % rosso scuro
+
+% --- LAYOUT E FORMATTAZIONE ---
+\usepackage{setspace}             % Permette di modificare facilmente l'interlinea (es. \doublespacing)
+\usepackage{geometry}             % Serve per personalizzare i margini e le dimensioni della pagina
+\usepackage{enumitem}             % Dà il controllo totale su elenchi puntati e numerati
+\usepackage{hyperref}             % Trasforma i riferimenti incrociati, URL e l'indice in link cliccabili nel PDF
+
+\geometry{margin=1in}
+
+\title{Progetto BDraw}
+\author{Mattia Zanini}
+\date{}
+
+\begin{document}
+
+\maketitle
+\doublespacing
+
+\section*{Introduzione}
+
+\begin{quote}
+    \textit{«...lationem omnium velocissimam [...] non per brevissimam lineam [...] sed per circuii portionem, fieri»} \\
+    \footnotesize{(G. Galilei, \textit{Discorsi e dimostrazioni matematiche intorno a due nuove scienze}, Giornata terza, Theorema XXII, Propositio XXXVI, Scholium, 1638)}
+\end{quote}
+
+Con queste parole Galileo Galilei esprimeva, già nel 1638, l'intuizione che la linea retta non fosse il percorso più rapido per un corpo in caduta. Il problema della brachistocrona consiste nella ricerca della curva che minimizza il tempo di percorrenza tra due punti sotto l'effetto della gravità. La sua soluzione, un arco di cicloide, fu scoperta oltre tre secoli fa, ma il fascino di questa sfida risiede ancora oggi nelle geniali intuizioni e negli strumenti matematici che la sua ricerca ha saputo generare.
+
+In questo contesto, dalla volontà di far sperimentare in prima persona ciò che per i matematici del Seicento rappresentava una vera competizione intellettuale, nasce questo progetto. L'obiettivo è, quindi, duplice: da un lato mostrare come sfide che impegnarono i geni di tutta Europa siano oggi accessibili grazie allo sviluppo del calcolo infinitesimale e degli strumenti computazionali, che permettono di ottenere soluzioni esatte di varia complessità fruibili anche da chi studia oggi; dall'altro offrire un'esperienza interattiva e concreta, cercando in prima persona la curva ottimale per via intuitiva, ``andando a occhio''.
+
+Il software qui presentato trasforma, infatti,  un problema puramente teorico in un'attività coinvolgente, quasi ludica: l'utente può disegnare curve arbitrarie e confrontare direttamente il tempo ottenuto con quello della soluzione ideale, apprezzando visivamente e quantitativamente le differenze tra i vari percorsi.
+
+Per realizzare questo obiettivo, l'applicazione mette a disposizione un'area di disegno dove tracciare il percorso e osservare il moto di una pallina lungo la rotta scelta. La velocità di percorrenza è mostrata sia attraverso una simulazione fisica in tempo reale, sia mediante il calcolo teorico preciso del moto sulla spezzata disegnata. Le curve possono essere fornite sia graficamente (tramite trascinamento del mouse) sia numericamente (tramite equazioni matematiche) \textcolor{firebrick}{(DA IMPLEMENTARE FORSE ALLA FINE)}, alimentando lo stesso motore di calcolo sottostante.
+
+\section{Storia della Brachistocrona}
+
+La ricerca del ``tempo minimo'' rappresenta un capitolo fondamentale della storia della scienza, segnando la nascita di una branca concettualmente nuova della matematica: il calcolo delle variazioni in dimensione infinita, trasformato una curiosità cinematica nella teoria dell'ottimizzazione.
+
+Il termine deriva dalle parole greche \textit{brákhistos} (\foreignlanguage{greek}{βράχιστος}, ``il più breve'') e \textit{khrónos} (\foreignlanguage{greek}{χρόνος}, ``tempo'') coniato dal matematico svizzero Johann Bernoulli nel 1696 nella rivista scientifica \textit{Acta Eruditorum}, ma contrariamente alla visione storiografica semplificata, le radici concettuali della questione furono poste già in precedenza.
+
+\subsection{La formulazione di Galileo (1638)}
+
+Con una forma del tutto originale, seppur ancora priva di nomenclatura, fu Galileo Galilei all'interno dei suoi \textit{Discorsi e dimostrazioni matematiche intorno a due nuove scienze} (1638), specificamente nella \textit{Giornata Terza}, a introdurre delle riflessioni nel contesto del moto naturalmente accelerato. Galileo non stava cercando di risolvere un quesito geometrico preesistente, ma stava ponendo lui stesso le fondamenta per un nuovo campo di indagine sulla cinematica dei corpi in caduta.
+
+Egli ebbe la formidabile intuizione che la linea retta, pur rappresentando il percorso spazialmente più breve, non fosse il tragitto temporalmente più efficiente tra due punti posti a quote diverse. Galileo dimostrò rigorosamente che il tempo di percorrenza lungo una singola corda tesa dal punto più basso di un quadrante di cerchio verticale è maggiore rispetto al tempo impiegato scendendo lungo una spezzata formata da due corde inscritte. Estendendo questo ragionamento iterativo a tre, quattro o più corde (fino a dividere il quadrante in cinque archi), egli dedusse che l'aumento del numero dei segmenti riduceva progressivamente il tempo di caduta:
+\begin{quote}
+    «Pertanto, quanto più, con poligoni inscritti ci avviciniamo alla circonferenza, tanto più presto si compie il moto tra i due segnati estremi A e C.»
+\end{quote}
+Spingendo questo concetto concettuale al limite, Galileo congetturò che la soluzione ottimale assoluta risiedesse nell'arco di circonferenza stesso. Sebbene oggi sappiamo che questa conclusione fosse inesatta, la sua analisi qualitativa fu straordinaria per l'epoca,  individuando la superiorità delle traiettorie curve concave rispetto alla retta. 
+
+Galileo aprì dunque una strada che solo decenni dopo, con l'avvento dei nuovi e più potenti strumenti del calcolo infinitesimale, avrebbe trovato una risposta analitica definitiva.
+
+\subsection{La sfida di Johann Bernoulli (1696)}
+
+La soluzione corretta arrivò quasi sessant'anni dopo, quando nel giugno 1696 Johann Bernoulli lanciò una sfida pubblica ai matematici di tutta Europa, pubblicando il problema sulla rivista \textit{Acta Eruditorum} di Lipsia.
+La risposta non si fece attendere: entro la fine del 1697, soluzioni furono proposte da alcuni dei più grandi studiosi dell'epoca:
+
+\begin{itemize}
+    \item \textbf{Isaac Newton}, che secondo la tradizione avrebbe risolto il problema in una sola notte, dopo averlo ricevuto per posta
+    \item \textbf{Gottfried Wilhelm Leibniz}, co-fondatore del calcolo infinitesimale
+    \item \textbf{Jacob Bernoulli}, fratello di Johann, che introdusse un metodo più generale
+    \item Lo stesso \textbf{Johann Bernoulli}, con un approccio basato sul principio di Fermat
+    \item \textbf{Guillaume de l'Hôpital}, autore del noto trattato sulle coniche
+\end{itemize}
+
+Ognuno di questi matematici utilizzò metodi diversi, ma il vero valore di questa competizione intellettuale non fu solo la risposta in sé. La brachistocrona è storicamente significativa perché \textbf{per risolvere questo problema furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti}. La necessità di trovare una curva che minimizzasse un funzionale (e non semplicemente un numero) richiese un salto concettuale che portò alla nascita del calcolo delle variazioni.
+
+\subsection{La soluzione: un arco di cicloide}
+
+La soluzione si rivelò essere un \textbf{arco di cicloide}, la curva descritta da un punto fisso su una circonferenza che rotola senza strisciare lungo una retta. La soluzione in forma parametrica è:
+
+\[
+    \begin{cases}
+        x(t) = c(t - \sin t) \\
+        y(t) = c(1 - \cos t)
+    \end{cases}
+    \qquad t \in [0, \tau]
+\]
+dove la costante $c$ e il parametro $\tau$ sono determinati dalle condizioni al contorno.
+\vspace{2em}
+
+La validità e l'eccellenza dell'approssimazione galileiana sono state ampiamente confermate e quantificate dagli studi moderni, sotto due diversi punti di vista. Da un lato, come analizzato nel dettaglio da Erlichson, il metodo geometrico di Galileo restituisce valori incredibilmente vicini all'ottimo circolare da lui supposto: il tempo di discesa lungo un semplice percorso spezzato a due corde risulta essere solo l'1\% circa più lungo rispetto al tempo calcolato sull'intero arco di cerchio. Dall'altro lato, i calcoli discussi da Buttazzo e Mintchev permettono di quantificare l'esatto margine d'errore di Galileo rispetto alla vera soluzione fisica: il tempo impiegato per compiere la discesa lungo la cicloide è circa il \textbf{96\%} di quello necessario percorrendo una semicirconferenza. Questi dati dimostrano come l'errore di valutazione di Galileo non fosse affatto enorme, rendendo pieno onore al suo fenomenale intuito fisico.
+
+\subsection{Nascita del calcolo delle variazioni}
+
+La brachistocrona è storicamente riconosciuta come uno dei primi e più celebri problemi del calcolo delle variazioni. Sebbene la sua formulazione originale nel XVII secolo non possedesse l'astrazione del linguaggio moderno, oggi classifichiamo questo quesito come un problema di ottimizzazione infinito-dimensionale: l'incognita non è infatti un singolo valore numerico, ma una funzione — ovvero la curva stessa — che deve minimizzare un funzionale su uno spazio di cammini ammissibili. È opportuno precisare che, sebbene sia uno dei pilastri della disciplina, storicamente non fu concepito in termini così astratti e non rappresenta, in senso assoluto, il primo problema classificabile modernamente come infinito-dimensionale.
+
+La formulazione matematica richiede di minimizzare il funzionale del tempo:
+
+\[
+    T(u) = \frac{1}{\sqrt{2g}} \int_{0}^{L} \sqrt{\frac{1 + |u'(x)|^2}{u(x)}} \, dx
+\]
+
+Dalle equazioni di Eulero-Lagrange (nella forma integrata di DuBois-Reymond per funzionali indipendenti esplicitamente dalla coordinata $x$) si ottiene la condizione di stazionarietà:
+
+\[
+    (1 + |u'(x)|^2) \ u(x) = 2c
+\]
+
+Questa equazione differenziale non lineare conduce alla soluzione cicloidale. L'efficacia di questa curva è evidente nel confronto diretto: il tempo di percorrenza risulta circa il 16\% inferiore rispetto al percorso rettilineo tra i medesimi punti. Le tecniche sviluppate per risolvere questo specifico problema hanno gettato le basi per ambiti che spaziano dalla fisica teorica all'ingegneria dei sistemi di controllo.
+
+\section{Requisiti Funzionali}
+
+\subsection{Input e Disegno}
+
+\begin{itemize}
+    \item L'utente deve poter disegnare una curva a mano libera sull'area di disegno tramite il trascinamento del mouse
+    \item Il sistema deve permettere l'inserimento di curve tramite equazioni matematiche, oltre all'input grafico \textcolor{firebrick}{(DA IMPLEMENTARE FORSE ALLA FINE)}
+    \item Il sistema deve poter campionare correttamente la posizione del mouse sull'area di disegno
+    \item Il sistema deve garantire la monotonia crescente della curva rispetto all'asse X, rimuovendo i punti che violano questo vincolo
+    \item Il sistema deve unire tutte le posizioni campionate per formare una curva continua
+    \item Il sistema deve permettere di pulire l'area di disegno per creare una nuova curva
+\end{itemize}
+
+\subsection{Curve Predefinite e Calcolo Teorico}
+
+\begin{itemize}
+    \item Il sistema deve poter generare percorsi predefiniti: linea retta, cicloide e arco di circonferenza
+    \item Il sistema deve permettere all'utente di definire la scala della simulazione (rapporto pixel/metri) per garantire la coerenza fisica del moto
+    \item Il sistema deve calcolare il tempo teorico di percorrenza sulla spezzata disegnata
+\end{itemize}
+
+\subsection{Simulazione Fisica}
+
+\begin{itemize}
+    \item Il sistema deve eseguire una simulazione fisica della pallina che percorre la curva sotto l'effetto della gravità
+    \item La velocità della pallina deve variare lungo il percorso in base alla quota, secondo il principio di conservazione dell'energia
+    \item Il sistema deve misurare e visualizzare il tempo effettivo di percorrenza durante la simulazione
+    \item Il sistema deve permettere di ripetere la simulazione sulla stessa curva
+\end{itemize}
+
+\subsection{Visualizzazione e Confronto}
+
+\begin{itemize}
+    \item Il sistema deve visualizzare il confronto tra tempo teorico e tempo effettivo di percorrenza
+    \item Il sistema deve loggare informazioni di debug su console (parametri fisici, stato della simulazione)
+\end{itemize}
+
+\section{Requisiti Non Funzionali}
+
+\subsection{Prestazioni, Responsività e Logging}
+
+\begin{itemize}
+    \item Il loop di simulazione deve essere eseguito con una frequenza tale da garantire fluidità, per mantenere la finestra dell'applicazione responsiva.
+    \item Il sistema deve fornire informazioni di debug su console tramite la libreria \texttt{spdlog} configurata adeguatamente
+\end{itemize}
+
+\subsection{Calcolo e Simulazione Fisica}
+
+\begin{itemize}
+    \item Il tempo teorico è calcolato in modo esatto sulla spezzata: poiché la curva è costante a tratti su ogni segmento, la formula di Galileo fornisce il valore preciso senza approssimazioni numeriche
+    \item La posizione della pallina in ciascun frame deve essere determinata collegando il tempo fisico reale con il fluire dei frame, garantendo coerenza fisica nella visualizzazione
+\end{itemize}
+
+\subsection{Elaborazione e Rendering}
+
+\begin{itemize}
+    \item Per garantire la monotonia crescente della curva viene eseguito un postprocessing sui punti campionati al momento del rilascio del mouse (terminazione del disegno)
+    \item La curva disegnata deve apparire continua all'utente, unendo tutte le posizioni campionate dal mouse
+    \item La pallina deve rimanere visivamente sopra la curva senza compenetrazioni grafiche, calcolando la normale della superficie nel punto di contatto
+\end{itemize}
+
+\end{document}
