@@ -69,7 +69,7 @@ Verrà generata la documentazione nelle cartelle `html/` e `latex/`.
 
 Per una trattazione dettagliata dei requisiti funzionali, dell'analisi matematica del problema, della storia della brachistocrona e delle scelte architettoniche del software, si rimanda alla documentazione completa disponibile nel file:
 
-**[Progetto BDraw.md](LaTeX%20Tesi/Progetto_BDraw.pdf)**
+**[Progetto BDraw.pdf](LaTeX%20Tesi/Progetto_BDraw.pdf)**
 
 ---
 *Autore: Mattia Zanini*  
