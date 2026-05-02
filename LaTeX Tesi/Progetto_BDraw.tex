@@ -61,7 +61,8 @@ Con una forma del tutto originale, seppur ancora priva di nomenclatura, fu Galil
 
 Egli ebbe la formidabile intuizione che la linea retta, pur rappresentando il percorso spazialmente più breve, non fosse il tragitto temporalmente più efficiente tra due punti posti a quote diverse. Galileo dimostrò rigorosamente che il tempo di percorrenza lungo una singola corda tesa dal punto più basso di un quadrante di cerchio verticale è maggiore rispetto al tempo impiegato scendendo lungo una spezzata formata da due corde inscritte. Estendendo questo ragionamento iterativo a tre, quattro o più corde (fino a dividere il quadrante in cinque archi), egli dedusse che l'aumento del numero dei segmenti riduceva progressivamente il tempo di caduta:
 \begin{quote}
-    «Pertanto, quanto più, con poligoni inscritti ci avviciniamo alla circonferenza, tanto più presto si compie il moto tra i due segnati estremi A e C.»
+    \textit{«Pertanto, quanto più, con poligoni inscritti ci avviciniamo alla circonferenza, tanto più presto si compie il moto tra i due segnati estremi A e C.»} \\
+    \footnotesize{(G. Galilei, \textit{Discorsi e dimostrazioni matematiche intorno a due nuove scienze}, Giornata terza, Theorema XXII, Propositio XXXVI, Scholium, 1638)}
 \end{quote}
 Spingendo questo concetto concettuale al limite, Galileo congetturò che la soluzione ottimale assoluta risiedesse nell'arco di circonferenza stesso. Sebbene oggi sappiamo che questa conclusione fosse inesatta, la sua analisi qualitativa fu straordinaria per l'epoca,  individuando la superiorità delle traiettorie curve concave rispetto alla retta. 
 
@@ -69,23 +70,21 @@ Galileo aprì dunque una strada che solo decenni dopo, con l'avvento dei nuovi e
 
 \subsection{La sfida di Johann Bernoulli (1696)}
 
-La soluzione corretta arrivò quasi sessant'anni dopo, quando nel giugno 1696 Johann Bernoulli lanciò una sfida pubblica ai matematici di tutta Europa, pubblicando il problema sulla rivista \textit{Acta Eruditorum} di Lipsia.
-La risposta non si fece attendere: entro la fine del 1697, soluzioni furono proposte da alcuni dei più grandi studiosi dell'epoca:
+Come già anticipato, a parlare per la prima volta di brachistocrona e a gettare le basi per una riflessione organica in materia, arrivò quasi sessant'anni dopo, nel giugno 1696 Johann Bernoulli lanciando una sfida pubblica ai matematici di tutta Europa, pubblicando il problema sulla rivista \textit{Acta Eruditorum} di Lipsia e risposta non si fece attendere. Entro la fine del 1697, i più grandi studiosi dell'epoca proposero le loro soluzioni, tra questi:
 
 \begin{itemize}
-    \item \textbf{Isaac Newton}, che secondo la tradizione avrebbe risolto il problema in una sola notte, dopo averlo ricevuto per posta
-    \item \textbf{Gottfried Wilhelm Leibniz}, co-fondatore del calcolo infinitesimale
-    \item \textbf{Jacob Bernoulli}, fratello di Johann, che introdusse un metodo più generale
-    \item Lo stesso \textbf{Johann Bernoulli}, con un approccio basato sul principio di Fermat
-    \item \textbf{Guillaume de l'Hôpital}, autore del noto trattato sulle coniche
-\end{itemize}
+    \item \textbf{Isaac Newton}, che secondo la tradizione venne a conoscenza del problema in ritardo, ma riuscì a risolverlo in una sola notte (spedendo la soluzione il giorno seguente in forma anonima);
+    \item \textbf{Gottfried Wilhelm Leibniz}, co-fondatore del calcolo infinitesimale;
+    \item \textbf{Jacob Bernoulli}, fratello di Johann, che introdusse una dimostrazione di natura prettamente geometrica;
+    \item Lo stesso \textbf{Johann Bernoulli}, con una soluzione basata sull'analogia con la legge di rifrazione della luce e sul principio di minimo di Fermat; \item \textbf{Guillaume de l'Hôpital} autore di ulteriori validi contributi analitici. \end{itemize}
 
-Ognuno di questi matematici utilizzò metodi diversi, ma il vero valore di questa competizione intellettuale non fu solo la risposta in sé. La brachistocrona è storicamente significativa perché \textbf{per risolvere questo problema furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti}. La necessità di trovare una curva che minimizzasse un funzionale (e non semplicemente un numero) richiese un salto concettuale che portò alla nascita del calcolo delle variazioni.
+Ognuno di questi matematici utilizzò metodi diversi, rendendo il vero valore di questa competizione intellettuale un qualcosa ben oltre la risposta in sé. Fino ad allora i problemi di minimizzazione dipendevano da uno o più parametri finiti; in questo caso, invece, la quantità da minimizzare (il tempo) dipendeva dall'intera curva spaziale descritta dal punto materiale.
+La brachistocrona è storicamente significativa proprio perché, per risolvere questo problema, furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti. Dalla necessità di trovare una curva (una funzione incognita) che minimizzasse un funzionale, si finì per compiere un salto concettuale in grado di portare alla nascita di una disciplina del tutto nuova: il calcolo delle variazioni.
 
-\subsection{La soluzione: un arco di cicloide}
+\subsection{La soluzione e il calcolo delle variazioni}
 
-La soluzione si rivelò essere un \textbf{arco di cicloide}, la curva descritta da un punto fisso su una circonferenza che rotola senza strisciare lungo una retta. La soluzione in forma parametrica è:
-
+La soluzione si rivelò essere un \textbf{arco di cicloide}, la curva descritta da un punto fisso su una circonferenza che rotola senza strisciare lungo una retta, che espressa in forma parametrica risulta:
+\vspace{0.5em}
 \[
     \begin{cases}
         x(t) = c(t - \sin t) \\
@@ -94,27 +93,24 @@ La soluzione si rivelò essere un \textbf{arco di cicloide}, la curva descritta 
     \qquad t \in [0, \tau]
 \]
 dove la costante $c$ e il parametro $\tau$ sono determinati dalle condizioni al contorno.
-\vspace{2em}
-
-La validità e l'eccellenza dell'approssimazione galileiana sono state ampiamente confermate e quantificate dagli studi moderni, sotto due diversi punti di vista. Da un lato, come analizzato nel dettaglio da Erlichson, il metodo geometrico di Galileo restituisce valori incredibilmente vicini all'ottimo circolare da lui supposto: il tempo di discesa lungo un semplice percorso spezzato a due corde risulta essere solo l'1\% circa più lungo rispetto al tempo calcolato sull'intero arco di cerchio. Dall'altro lato, i calcoli discussi da Buttazzo e Mintchev permettono di quantificare l'esatto margine d'errore di Galileo rispetto alla vera soluzione fisica: il tempo impiegato per compiere la discesa lungo la cicloide è circa il \textbf{96\%} di quello necessario percorrendo una semicirconferenza. Questi dati dimostrano come l'errore di valutazione di Galileo non fosse affatto enorme, rendendo pieno onore al suo fenomenale intuito fisico.
-
-\subsection{Nascita del calcolo delle variazioni}
-
-La brachistocrona è storicamente riconosciuta come uno dei primi e più celebri problemi del calcolo delle variazioni. Sebbene la sua formulazione originale nel XVII secolo non possedesse l'astrazione del linguaggio moderno, oggi classifichiamo questo quesito come un problema di ottimizzazione infinito-dimensionale: l'incognita non è infatti un singolo valore numerico, ma una funzione — ovvero la curva stessa — che deve minimizzare un funzionale su uno spazio di cammini ammissibili. È opportuno precisare che, sebbene sia uno dei pilastri della disciplina, storicamente non fu concepito in termini così astratti e non rappresenta, in senso assoluto, il primo problema classificabile modernamente come infinito-dimensionale.
-
-La formulazione matematica richiede di minimizzare il funzionale del tempo:
+\vspace{0.5em}
+\newline
+Per arrivare a ciò è stato necessario minimizzare il seguente funzionale del tempo:
 
 \[
     T(u) = \frac{1}{\sqrt{2g}} \int_{0}^{L} \sqrt{\frac{1 + |u'(x)|^2}{u(x)}} \, dx
 \]
-
-Dalle equazioni di Eulero-Lagrange (nella forma integrata di DuBois-Reymond per funzionali indipendenti esplicitamente dalla coordinata $x$) si ottiene la condizione di stazionarietà:
+e dalle equazioni di Eulero-Lagrange (nella forma integrata di DuBois-Reymond per funzionali indipendenti esplicitamente dalla coordinata $x$) si ottiene la seguente condizione di stazionarietà:
 
 \[
     (1 + |u'(x)|^2) \ u(x) = 2c
 \]
+Questa equazione differenziale non lineare conduce alla soluzione cicloidale e l'efficacia di questa curva rispetto a percorsi alternativi risulta notevole.
 
-Questa equazione differenziale non lineare conduce alla soluzione cicloidale. L'efficacia di questa curva è evidente nel confronto diretto: il tempo di percorrenza risulta circa il 16\% inferiore rispetto al percorso rettilineo tra i medesimi punti. Le tecniche sviluppate per risolvere questo specifico problema hanno gettato le basi per ambiti che spaziano dalla fisica teorica all'ingegneria dei sistemi di controllo.
+Nel confronto diretto con un cammino puramente rettilineo, il margine di vantaggio temporale non è assoluto ma dipende dalla posizione del punto di arrivo; tuttavia, per specifiche configurazioni spaziali, il tempo di percorrenza lungo la cicloide risulta inferiore di circa il 16\% rispetto alla traiettoria rettilina corrispondente.
+\vspace{1em}
+
+In conclusione, il problema della brachistocrona ben può rappresentare un emblema del progresso scientifico: insegna come da un intuito geniale, come quello di Galileo, si siano poste le basi per sviluppare strumenti analitici universali in grado di decifrare con esattezza le leggi di ottimizzazione nascoste nella natura, di cui si prova a fornire esperienza con questa applicazione.
 
 \section{Requisiti Funzionali}
 
