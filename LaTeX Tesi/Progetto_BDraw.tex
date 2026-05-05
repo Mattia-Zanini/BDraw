@@ -10,18 +10,18 @@
 \usepackage{amsmath}              % Fornisce strumenti avanzati per scrivere formule matematiche
 \usepackage{newtxtext,newtxmath}  % 1.  Cambia il font del documento e della matematica in stile "Times"
 
-% 2.    DOPO diciamo a LaTeX di usare il Computer Modern (cmr) per il greco
-%       al posto della famiglia di newtxtext (ntxtlf) che non ha quei glifi
+% Dico a LaTeX di usare il Computer Modern (cmr) per il greco
+% al posto della famiglia di newtxtext (ntxtlf) che non ha quei glifi
 \DeclareFontFamilySubstitution{LGR}{ntxtlf}{cmr}
 
-\usepackage{xcolor}               % Gestione dei colori
+\usepackage{xcolor} % Gestione dei colori
 \definecolor{firebrick}{rgb}{0.6, 0, 0} % rosso scuro
 
 % --- LAYOUT E FORMATTAZIONE ---
-\usepackage{setspace}             % Permette di modificare facilmente l'interlinea (es. \doublespacing)
-\usepackage{geometry}             % Serve per personalizzare i margini e le dimensioni della pagina
-\usepackage{enumitem}             % Dà il controllo totale su elenchi puntati e numerati
-\usepackage{hyperref}             % Trasforma i riferimenti incrociati, URL e l'indice in link cliccabili nel PDF
+\usepackage{setspace} % Permette di modificare facilmente l'interlinea (es. \doublespacing)
+\usepackage{geometry} % Serve per personalizzare i margini e le dimensioni della pagina
+\usepackage{enumitem} % Dà il controllo totale su elenchi puntati e numerati
+\usepackage{hyperref} % Trasforma i riferimenti incrociati, URL e l'indice in link cliccabili nel PDF e sistema dei problemi con le lettere greche
 
 \geometry{margin=1in}
 
@@ -41,9 +41,9 @@
     \footnotesize{(G. Galilei, \textit{Discorsi e dimostrazioni matematiche intorno a due nuove scienze}, Giornata terza, Theorema XXII, Propositio XXXVI, Scholium, 1638)}
 \end{quote}
 
-Con queste parole Galileo Galilei esprimeva, già nel 1638, l'intuizione che la linea retta non fosse il percorso più rapido per un corpo in caduta. Il problema della brachistocrona consiste nella ricerca della curva che minimizza il tempo di percorrenza tra due punti sotto l'effetto della gravità. La sua soluzione, un arco di cicloide, fu scoperta oltre tre secoli fa, ma il fascino di questa sfida risiede ancora oggi nelle geniali intuizioni e negli strumenti matematici che la sua ricerca ha saputo generare.
+Con queste parole Galileo Galilei esprimeva, già nel 1638, l'intuizione che la linea retta non fosse il percorso più rapido per un corpo in caduta. La storia del problema della brachistocrona, tra geniali intuizioni e strumenti matematici, mentiene da oltre tre secoli il suo fascino concettuale e matematico.
 
-In questo contesto, dalla volontà di far sperimentare in prima persona ciò che per i matematici del Seicento rappresentava una vera competizione intellettuale, nasce questo progetto. L'obiettivo è, quindi, duplice: da un lato mostrare come sfide che impegnarono i geni di tutta Europa siano oggi accessibili grazie allo sviluppo del calcolo infinitesimale e degli strumenti computazionali, che permettono di ottenere soluzioni esatte di varia complessità fruibili anche da chi studia oggi; dall'altro offrire un'esperienza interattiva e concreta, cercando in prima persona la curva ottimale per via intuitiva, ``andando a occhio''.
+Nella volontà di far sperimentare in prima persona ciò che per i matematici del Seicento rappresentava una vera competizione intellettuale, nasce questo progetto. L'obiettivo è, quindi, duplice: da un lato mostrare come sfide che impegnarono i geni di tutta Europa siano oggi accessibili grazie allo sviluppo del calcolo infinitesimale e degli strumenti computazionali, che permettono di ottenere soluzioni esatte di varia complessità fruibili anche da chi studia oggi; dall'altro offrire un'esperienza interattiva e concreta, cercando in prima persona la curva ottimale per via intuitiva, ``andando a occhio''.
 
 Il software qui presentato trasforma, infatti,  un problema puramente teorico in un'attività coinvolgente, quasi ludica: l'utente può disegnare curve arbitrarie e confrontare direttamente il tempo ottenuto con quello della soluzione ideale, apprezzando visivamente e quantitativamente le differenze tra i vari percorsi.
 
@@ -51,7 +51,7 @@ Per realizzare questo obiettivo, l'applicazione mette a disposizione un'area di 
 
 \section{Storia della Brachistocrona}
 
-La ricerca del ``tempo minimo'' rappresenta un capitolo fondamentale della storia della scienza, segnando la nascita di una branca concettualmente nuova della matematica: il calcolo delle variazioni in dimensione infinita, trasformato una curiosità cinematica nella teoria dell'ottimizzazione.
+La ricerca del ``tempo minimo'' rappresenta un capitolo fondamentale della storia della scienza, segnando i primi passi verso una branca concettualmente nuova della matematica: il calcolo delle variazioni. Sebbene all'epoca non fosse stato formulato con il livello di astrazione odierno, questo problema trasformò una curiosità cinematica in una delle basi per la moderna teoria dell'ottimizzazione in dimensione infinita.
 
 Il termine deriva dalle parole greche \textit{brákhistos} (\foreignlanguage{greek}{βράχιστος}, ``il più breve'') e \textit{khrónos} (\foreignlanguage{greek}{χρόνος}, ``tempo'') coniato dal matematico svizzero Johann Bernoulli nel 1696 nella rivista scientifica \textit{Acta Eruditorum}, ma contrariamente alla visione storiografica semplificata, le radici concettuali della questione furono poste già in precedenza.
 
@@ -78,8 +78,11 @@ Come già anticipato, a parlare per la prima volta di brachistocrona e a gettare
     \item \textbf{Jacob Bernoulli}, fratello di Johann, che introdusse una dimostrazione di natura prettamente geometrica;
     \item Lo stesso \textbf{Johann Bernoulli}, con una soluzione basata sull'analogia con la legge di rifrazione della luce e sul principio di minimo di Fermat; \item \textbf{Guillaume de l'Hôpital} autore di ulteriori validi contributi analitici. \end{itemize}
 
-Ognuno di questi matematici utilizzò metodi diversi, rendendo il vero valore di questa competizione intellettuale un qualcosa ben oltre la risposta in sé. Fino ad allora i problemi di minimizzazione dipendevano da uno o più parametri finiti; in questo caso, invece, la quantità da minimizzare (il tempo) dipendeva dall'intera curva spaziale descritta dal punto materiale.
-La brachistocrona è storicamente significativa proprio perché, per risolvere questo problema, furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti. Dalla necessità di trovare una curva (una funzione incognita) che minimizzasse un funzionale, si finì per compiere un salto concettuale in grado di portare alla nascita di una disciplina del tutto nuova: il calcolo delle variazioni.
+Ognuno di questi matematici utilizzò metodi diversi, rendendo il vero valore di questa competizione intellettuale un qualcosa ben oltre la risposta in sé.
+
+Anche se nella storia c'erano già stati altri problemi in cui si cercava una forma geometrica ideale, la brachistocrona fu la scintilla che portò alla creazione di nuovi e potenti strumenti matematici. La vera rottura col passato riguardava l'obiettivo stesso della ricerca: non si trattava più di calcolare un valore minimo a partire da variabili numeriche classiche, ma di individuare un'intera curva.
+
+La brachistocrona è storicamente significativa proprio perché, per gestire un'incognita che non era più un semplice numero ma una vera e propria funzione, furono sviluppati strumenti matematici che si sarebbero rivelati fondamentali in moltissimi altri contesti. Dalla necessità di trovare una curva capace di minimizzare un funzionale, si compì quel salto concettuale che portò al superamento delle tecniche tradizionali e alla nascita di una disciplina del tutto nuova: il calcolo delle variazioni.
 
 \subsection{La soluzione e il calcolo delle variazioni}
 
@@ -107,7 +110,7 @@ e dalle equazioni di Eulero-Lagrange (nella forma integrata di DuBois-Reymond pe
 \]
 Questa equazione differenziale non lineare conduce alla soluzione cicloidale e l'efficacia di questa curva rispetto a percorsi alternativi risulta notevole.
 
-Nel confronto diretto con un cammino puramente rettilineo, il margine di vantaggio temporale non è assoluto ma dipende dalla posizione del punto di arrivo; tuttavia, per specifiche configurazioni spaziali, il tempo di percorrenza lungo la cicloide risulta inferiore di circa il 16\% rispetto alla traiettoria rettilina corrispondente.
+Nel confronto diretto con un cammino puramente rettilineo, il margine di vantaggio temporale non è assoluto, ma dipende dalla posizione del punto di arrivo. Per specifiche configurazioni spaziali, il tempo di percorrenza lungo la cicloide risulta inferiore di circa il 16\% rispetto alla traiettoria rettilinea corrispondente.
 \vspace{1em}
 
 In conclusione, il problema della brachistocrona ben può rappresentare un emblema del progresso scientifico: insegna come da un intuito geniale, come quello di Galileo, si siano poste le basi per sviluppare strumenti analitici universali in grado di decifrare con esattezza le leggi di ottimizzazione nascoste nella natura, di cui si prova a fornire esperienza con questa applicazione.
