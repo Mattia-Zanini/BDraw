@@ -123,7 +123,9 @@ In conclusione, il problema della brachistocrona ben può rappresentare un emble
     \item L'utente deve poter disegnare una curva a mano libera sull'area di disegno tramite il trascinamento del mouse
     \item Il sistema deve permettere l'inserimento di curve tramite equazioni matematiche, oltre all'input grafico \textcolor{firebrick}{(DA IMPLEMENTARE FORSE ALLA FINE)}
     \item Il sistema deve poter campionare correttamente la posizione del mouse sull'area di disegno
-    \item Il sistema deve garantire la monotonia crescente della curva rispetto all'asse X, rimuovendo i punti che violano questo vincolo
+    \item Il sistema deve garantire che la curva sia sia monotona strettamente crescente delle ascisse (il percorso deve avanzare sempre verso destra senza "tornare indietro")
+    \item Il sistema deve garantire che la curva si trovi interamente nel semipiano $y \ge 0$ (considerando l'origine nel punto di partenza e l'asse $y$ rivolto verso il basso)
+    \item Il sistema deve permettere alla coordinata $y$ di essere non monotona, consentendo alla curva di scendere e risalire per collegare punti alla stessa quota o a quote diverse
     \item Il sistema deve unire tutte le posizioni campionate per formare una curva continua
     \item Il sistema deve permettere di pulire l'area di disegno per creare una nuova curva
 \end{itemize}
@@ -131,8 +133,8 @@ In conclusione, il problema della brachistocrona ben può rappresentare un emble
 \subsection{Curve Predefinite e Calcolo Teorico}
 
 \begin{itemize}
-    \item Il sistema deve poter generare percorsi predefiniti: linea retta, cicloide e arco di circonferenza
-    \item Il sistema deve permettere all'utente di definire la scala della simulazione (rapporto pixel/metri) per garantire la coerenza fisica del moto
+    \item Il sistema deve poter generare percorsi predefiniti: linea retta, cicloide e un arco di circonferenza
+    \item Il sistema deve permettere all'utente di definire un fattore di conversione (pixel per metro) tramite un'interfaccia di controllo (slider). Questo valore deve mappare le distanze visive sullo schermo a distanze fisiche reali
     \item Il sistema deve calcolare il tempo teorico di percorrenza sulla spezzata disegnata
 \end{itemize}
 
@@ -159,6 +161,7 @@ In conclusione, il problema della brachistocrona ben può rappresentare un emble
 \begin{itemize}
     \item Il loop di simulazione deve essere eseguito con una frequenza tale da garantire fluidità, per mantenere la finestra dell'applicazione responsiva.
     \item Il sistema deve fornire informazioni di debug su console tramite la libreria \texttt{spdlog} configurata adeguatamente
+    \item Il passaggio da una scala all'altra o il cambio di gravità deve riflettersi immediatamente sui parametri della simulazione e sul calcolo del tempo teorico senza richiedere il riavvio dell'applicazione
 \end{itemize}
 
 \subsection{Calcolo e Simulazione Fisica}
@@ -166,12 +169,13 @@ In conclusione, il problema della brachistocrona ben può rappresentare un emble
 \begin{itemize}
     \item Il tempo teorico è calcolato in modo esatto sulla spezzata: poiché la curva è costante a tratti su ogni segmento, la formula di Galileo fornisce il valore preciso senza approssimazioni numeriche
     \item La posizione della pallina in ciascun frame deve essere determinata collegando il tempo fisico reale con il fluire dei frame, garantendo coerenza fisica nella visualizzazione
+    \item La simulazione deve preservare la correttezza delle leggi della cinematica indipendentemente dalla scala scelta. Il tempo di percorrenza ``reale'' calcolato deve essere invariante rispetto a una scala puramente visiva
 \end{itemize}
 
 \subsection{Elaborazione e Rendering}
 
 \begin{itemize}
-    \item Per garantire la monotonia crescente della curva viene eseguito un postprocessing sui punti campionati al momento del rilascio del mouse (terminazione del disegno)
+    \item Viene eseguito un post-processing sui punti campionati durante il disegno della curva, assicurando la monotonia strettamente crescente lungo l'asse delle ascisse
     \item La curva disegnata deve apparire continua all'utente, unendo tutte le posizioni campionate dal mouse
     \item La pallina deve rimanere visivamente sopra la curva senza compenetrazioni grafiche, calcolando la normale della superficie nel punto di contatto
 \end{itemize}
