@@ -103,6 +103,7 @@ Temporary Items
 build/
 bin/
 files_md/
+.vscode/
 
 ### LaTeX ###
 LaTeX\ Tesi/*.aux
