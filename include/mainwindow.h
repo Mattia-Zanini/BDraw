@@ -23,6 +23,9 @@ public:
     ~MainWindow() override;
 
 private:
+    const std::string TAG = this->metaObject()->className(); // nome della classe
+    const std::string stdTAG = "[" + TAG + "]";
+
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

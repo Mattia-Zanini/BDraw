@@ -33,9 +33,9 @@ set(TS_FILES BDraw_it_IT.ts)
 set(PROJECT_SOURCES
     src/main.cpp
     src/mainwindow.cpp
-    src/cartesianView.cpp
+    src/simulationCanvas.cpp
     include/mainwindow.h
-    include/cartesianView.h
+    include/simulationCanvas.h
     mainwindow.ui
     ${TS_FILES}
 )
