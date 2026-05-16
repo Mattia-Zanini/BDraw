@@ -8,6 +8,7 @@
 #include <QGraphicsScene>
 #include <QPainterPath>
 #include <QGraphicsPathItem>
+#include <QMouseEvent>
 #include <QPen>
 
 class SimulationCanvas : public QGraphicsView
@@ -19,23 +20,27 @@ public:
     explicit SimulationCanvas(QWidget *parent = nullptr);
     ~SimulationCanvas() override;
 
-    QList<QPointF> getSampledPoints() const;           // ritorna la lista dei punti campionati della curva disegnata
     void redrawCurve(const QList<QPointF> &newPoints); // ridisegna la curva
     void clearScene();                                 // pulisce la scena e resetta i dati
     void drawLine();                                   // disegna una retta
     void drawCycloid();                                // disegna una cicloide
     void drawCircle();                                 // disegna un arco di circonferenza
 
-private:
-    const QString pointToString(const QPointF &) const;         // funzione per DEBUG e LOGGING
-    const QString pointsToString(const QList<QPointF> &) const; // funzione per DEBUG e LOGGING
-
 signals:
     void drawingFinished();    // segnala è terminato il disegno
     void simulationFinished(); // segnala il termine della simulazione
 
-    // Attributi
 private:
+    // Metodi per gestire gli eventi del mouse
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
+    const QString pointToString(const QPointF &) const;         // funzione per DEBUG e LOGGING
+    const QString pointsToString(const QList<QPointF> &) const; // funzione per DEBUG e LOGGING
+    void postProcessingCurve(); // tolgo i punti che non rispettano la crescita monotona in X.
+
+    // Attributi
     const std::string TAG = this->metaObject()->className(); // nome della classe
     const std::string stdTAG = "[" + TAG + "]";
 

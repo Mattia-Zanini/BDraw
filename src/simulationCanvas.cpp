@@ -2,6 +2,7 @@
 
 SimulationCanvas::~SimulationCanvas()
 {
+  clearScene();
   spdlog::debug("{} SimulationCanvas distrutto correttamente", stdTAG);
 }
 
@@ -151,12 +152,102 @@ void SimulationCanvas::drawCycloid()
 {
   clearScene();
 
+  spdlog::info("{} la CICLOIDE al momento non è supportata", stdTAG);
+  /*
   spdlog::info(
       "{} Disegnata la CICLOIDE con inizio: {} e fine: {}; utilizzando {} punti",
       stdTAG,
       pointToString(points.first()).toStdString(),
       pointToString(points.back()).toStdString(),
       points.count());
+  */
 
   emit drawingFinished();
+}
+
+// GESTIONE DEL CLICK
+void SimulationCanvas::mousePressEvent(QMouseEvent *event)
+{
+  if (event->button() == Qt::LeftButton)
+  {
+    if (points.isEmpty())
+    {
+      spdlog::debug("{} Inizio di un nuovo disegno", stdTAG);
+      QPointF scenePoint = mapToScene(event->pos()); // converto la posizione del click dalla vista alla scena
+      isDrawing = true;
+
+      curve = QPainterPath();
+      points.append(QPointF(0, 0)); // il primo punto deve essere SEMPRE l'origine
+      curve.moveTo(points.first());
+
+      points.append(scenePoint);
+      curve.lineTo(points[1]); // disegno il tratto che va dall'origine al primo punto
+      pathItem = myScene->addPath(curve, myPen);
+    }
+    else
+    {
+      spdlog::debug("{} Per disegnare un nuovo percorso bisogna prima pulire la scena", stdTAG);
+    }
+  }
+
+  // è buona norma richiamare l'evento della classe base per non bloccare altri comportamenti di default
+  QGraphicsView::mousePressEvent(event);
+}
+
+// GESTIONE DEL MOVIMENTO
+void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
+{
+  // verifico se il tasto sinistro è attualmente ancora premuto
+  if (event->buttons() & Qt::LeftButton)
+  {
+    if (isDrawing && pathItem)
+    {
+      QPointF scenePoint = mapToScene(event->pos());
+      points.append(scenePoint);
+      curve.lineTo(scenePoint);
+      pathItem->setPath(curve);
+    }
+  }
+
+  QGraphicsView::mouseMoveEvent(event);
+}
+
+// GESTIONE DEL RILASCIO
+void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
+{
+  // verifico se è stato rilasciato il tasto
+  if (event->button() == Qt::LeftButton && isDrawing)
+  {
+    isDrawing = false; // il disegno è terminato
+    spdlog::debug("{} Disegno terminato", stdTAG);
+    postProcessingCurve();
+
+    emit drawingFinished();
+  }
+
+  QGraphicsView::mouseReleaseEvent(event);
+}
+
+void SimulationCanvas::postProcessingCurve()
+{
+  if (points.size() < 2) // non serve processare 1 punto solo (o 0)
+    return;
+
+  spdlog::debug("{} PRE: sono presenti {} punti", stdTAG, points.size());
+  QList<QPointF> processedPoints;
+  processedPoints.append(points.first());
+
+  qreal min = 0;
+  for (int i = 1; i < points.size(); i++)
+  {
+    if (points[i].x() >= min)
+    {
+      processedPoints.append(points[i]);
+      min = points[i].x();
+    }
+  }
+  points = processedPoints;
+
+  redrawCurve(points);
+  spdlog::debug("{} Curva processata, ora sono presenti {} punti", stdTAG, points.size());
 }
