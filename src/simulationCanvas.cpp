@@ -24,6 +24,11 @@ const QString SimulationCanvas::pointsToString(const QList<QPointF> &pList) cons
   return result;
 }
 
+const double SimulationCanvas::applyScale(const double pixels) const
+{
+  return pixels / pixelsPerMeter;
+}
+
 // Inizializza il widget e configura la scena grafica e la fisica.
 SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
 {
@@ -57,8 +62,6 @@ void SimulationCanvas::clearScene()
   pathItem = nullptr; // resetto il puntatore per non avere un dangling pointer
 
   spdlog::debug("{} Scena pulita", stdTAG);
-
-  emit drawingFinished(); // invia il segnale di termine disegno
 }
 
 void SimulationCanvas::redrawCurve(const QList<QPointF> &newPoints)
@@ -130,7 +133,7 @@ void SimulationCanvas::drawCircle()
   {
     double t_i = (i * M_PI_2 / numPoints) + M_PI;
     double x = Rx * std::cos(t_i) + Rx;
-    double y = -Ry * std::sin(t_i); // il (-) è una correzzione, dovuto a come viene rappresentato l'asse y nel graphics scene
+    double y = -Ry * std::sin(t_i); // il (-) è una correzione, dovuto a come viene rappresentato l'asse y nel graphics scene
     points.append(QPointF(x, y));
   }
 
@@ -203,9 +206,13 @@ void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
     if (isDrawing && pathItem)
     {
       QPointF scenePoint = mapToScene(event->pos());
-      points.append(scenePoint);
-      curve.lineTo(scenePoint);
-      pathItem->setPath(curve);
+      // Controllo che i punti siano almeno un pochino distanziati fra di loro
+      if (std::hypot(scenePoint.x() - points.last().x(), scenePoint.y() - points.last().y()) > minMoveDistance)
+      {
+        points.append(scenePoint);
+        curve.lineTo(scenePoint);
+        pathItem->setPath(curve);
+      }
     }
   }
 
@@ -240,7 +247,7 @@ void SimulationCanvas::postProcessingCurve()
   qreal min = 0;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() >= min)
+    if (points[i].x() >= min && points[i].y() >= 0)
     {
       processedPoints.append(points[i]);
       min = points[i].x();
@@ -250,4 +257,54 @@ void SimulationCanvas::postProcessingCurve()
 
   redrawCurve(points);
   spdlog::debug("{} Curva processata, ora sono presenti {} punti", stdTAG, points.size());
+}
+
+const double SimulationCanvas::computeTheoreticalTime() const
+{
+  double totalTime = 0.0;
+
+  if (points.count() < 2)
+    return 0.0;
+
+  double yStart = points[0].y(); // non applico la scala, perché il primo punto è sempre l'origine
+
+  for (int i = 0; i < points.count() - 1; i++)
+  {
+    double x1 = applyScale(points[i].x());
+    double y1 = applyScale(points[i].y());
+    double x2 = applyScale(points[i + 1].x());
+    double y2 = applyScale(points[i + 1].y());
+
+    // pitagora
+    double d = std::hypot(x2 - x1, y2 - y1);
+
+    // VELOCITA': sqrt(2 * g * Δy), dalla conservazione dell'energia
+    // il max, serve per proteggere i calcoli in caso di valori negativi
+    double v1 = std::sqrt(std::max(0.0, 2.0 * gravity) * (y1 - yStart)); // sqrt[2g(y1 - 0)] = ⎷(2g*y1)
+    double v2 = std::sqrt(std::max(0.0, 2.0 * gravity) * (y2 - yStart)); // sqrt(2g*y2)
+
+    // v1: la velocità con cui la pallina entra in quel segmento (basata su quanto è scesa dall'inizio fino al punto 1)
+    // v2: la velocità con cui la pallina esce da quel segmento (basata su quanto è scesa dall'inizio fino al punto 2)
+
+    // siccome il segmento è una linea retta, la pallina ha aumentato la sua velocità in modo perfettamente regolare
+    double vMedia = (v1 + v2) / 2.0;
+
+    // l'if serve per evitare divisioni per 0 o per valori impercettibili
+    if ((v1 + v2) > epsilonSpeed)
+      totalTime += d / vMedia; // tempo = distanza / velocità
+    else
+    {
+      // se il programma entra in questo else, significa una cosa sola: sono all'inizio del percorso e la pallina
+      // sta partendo da ferma. Non posso usare la velocità per calcolare il tempo (perché non ce n'è ancora!)
+
+      double dy = y2 - y1;
+      if (dy > epsilonSpeed) // se non rispetta l'if allora sto aggiungendo 0.0 al tempo
+        // è la soluzione cinematica esatta per un corpo che scivola su un piano inclinato partendo da fermo
+        totalTime += std::sqrt(2.0 * std::pow(d, 2) / (gravity * dy));
+    }
+  }
+
+  spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", stdTAG, pixelsPerMeter, totalTime);
+
+  return totalTime;
 }

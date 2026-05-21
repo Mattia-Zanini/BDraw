@@ -82,6 +82,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     connect(clearBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::clearScene);
 
+    connect(clearBtn, &QPushButton::clicked, this,
+            [=]
+            {
+                simulationCanvas->clearScene();
+                actualTimeLabel->setText("Tempo effettivo: ---");
+            });
+
+    connect(simulationCanvas, &SimulationCanvas::drawingFinished, this,
+            [=]
+            {
+                double time = simulationCanvas->computeTheoreticalTime();
+                actualTimeLabel->setText(QString("Tempo effettivo: %1")
+                                             .arg(time));
+            });
+
     // infine imposto il widget centrale sulla MainWindow
     setCentralWidget(centralWidget);
     setWindowTitle("");
