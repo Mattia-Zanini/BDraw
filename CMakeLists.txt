@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
 
+# cspell:ignore AUTOUIC AUTOMOC AUTORCC libassert mainwindow BLAS BINDIR dsymutil Armadillo
+
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
+endif()
+
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 project(BDraw VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -17,6 +27,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
 find_package(spdlog CONFIG REQUIRED)
 find_package(Armadillo REQUIRED) # Rimosso CONFIG per maggiore compatibilità
+find_package(Boost REQUIRED)
 
 
 include(FetchContent)
@@ -62,6 +73,7 @@ target_link_libraries(BDraw PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     spdlog::spdlog
     libassert::assert
+    Boost::boost
 )
 
 

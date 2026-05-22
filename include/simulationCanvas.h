@@ -1,8 +1,14 @@
+// cspell:ignore SIMULATIONCANVAS qreal
+
 #ifndef SIMULATIONCANVAS_H
 #define SIMULATIONCANVAS_H
 
 #include <libassert/assert.hpp>
 #include <spdlog/spdlog.h>
+
+#include <boost/math/constants/constants.hpp>
+#include <boost/math/special_functions/beta.hpp>
+#include <boost/math/tools/toms748_solve.hpp>
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -10,7 +16,6 @@
 #include <QGraphicsPathItem>
 #include <QMouseEvent>
 #include <QPen>
-#include <QVector2D>
 
 class SimulationCanvas : public QGraphicsView
 {
@@ -47,7 +52,7 @@ private:
     const std::string TAG = this->metaObject()->className(); // nome della classe
     const std::string stdTAG = "[" + TAG + "]";
     const double gravity = 9.81;
-    const double epsilonSpeed = 1e-6;
+    const double threshold = 1e-6;
     const double minMoveDistance = 5.0;
     double pixelsPerMeter = 100.0;
 

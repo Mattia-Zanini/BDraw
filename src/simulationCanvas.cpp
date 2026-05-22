@@ -1,3 +1,5 @@
+// cspell:ignore SIMULATIONCANVAS qreal
+
 #include "simulationCanvas.h"
 
 SimulationCanvas::~SimulationCanvas()
@@ -98,8 +100,10 @@ void SimulationCanvas::drawLine()
   double targetX = viewport()->width() - 40;
   double targetY = viewport()->height() - 40;
 
+  double targetMin = std::min(targetX, targetY);
+
   points.append(QPointF(0, 0));
-  points.append(QPointF(targetX, targetY));
+  points.append(QPointF(targetMin, targetMin)); // così la retta termina esattamente dove finisce l'arco di circonferenza
 
   redrawCurve(points);
 
@@ -121,21 +125,25 @@ void SimulationCanvas::drawCircle()
   double targetX = viewport()->width() - 40;
   double targetY = viewport()->height() - 40;
 
-  double R = targetX;
-  double Rx = R;
+  double targetMin = std::min(targetX, targetY);
+
+  double R = targetMin;
+  double Rx = targetX;
   double Ry = targetY;
 
   int numPoints = 50;
   points.reserve(numPoints);
   points.append(QPointF(0.0, 0.0)); // punto iniziale
 
-  for (double i = 1; i < numPoints; i += 1.0)
+  for (double i = 1.0; i <= numPoints; i += 1.0)
   {
-    double t_i = (i * M_PI_2 / numPoints) + M_PI;
-    double x = Rx * std::cos(t_i) + Rx;
-    double y = -Ry * std::sin(t_i); // il (-) è una correzione, dovuto a come viene rappresentato l'asse y nel graphics scene
+    double t_i = (i * boost::math::constants::half_pi<double>() / numPoints) + boost::math::constants::pi<double>();
+    double x = R * std::cos(t_i) + R;
+    double y = -R * std::sin(t_i); // il (-) è una correzione, dovuto a come viene rappresentato l'asse y nel graphics scene
     points.append(QPointF(x, y));
   }
+
+  points.last() = QPointF(R, R);
 
   redrawCurve(points);
 
@@ -155,15 +163,93 @@ void SimulationCanvas::drawCycloid()
 {
   clearScene();
 
-  spdlog::info("{} la CICLOIDE al momento non è supportata", stdTAG);
-  /*
+  double targetX = viewport()->width() - 40;
+  double targetY = viewport()->height() - 40;
+
+  double targetMin = std::min(targetX, targetY);
+
+  // ho inizializzato A uguale a B, in modo tale che la cicloide
+  // termini esattamente dove termina l'arco di circonferenza
+  double A = targetMin;
+  double B = targetMin;
+
+  double tau = 0.0;
+  double c = 0.0;
+
+  // (STEP 1) GESTIONE DEL CASO LIMITE
+  // Se B è circa 0, la formula della bisezione esplode (A/B), in questo caso: tau = 2*PI e c = A / (2*PI).
+  if (B < threshold)
+  {
+    tau = boost::math::constants::two_pi<double>();
+    c = A / boost::math::constants::two_pi<double>();
+  }
+  else
+  {
+    // (STEP 2) CASO GENERALE: risoluzione numerica con TOMS748
+    double q = A / B;
+
+    // funzione f da azzerare:
+    // phi(t) = ( t - sin(t) ) / ( 1 - cos(t) )
+    // f(t) = phi(t) - q
+    auto f = [q](double t) -> double
+    {
+      // dovrò risolvere l'equazione f(t) = 0 -> phi(t) - q = 0
+      return (t - std::sin(t)) / (1.0 - std::cos(t)) - q;
+    };
+
+    // range di ricerca: sto strettamente dentro (0, 2*PI) per evitare le divisioni per 0 agli estremi
+    double left = threshold;
+    double right = boost::math::constants::two_pi<double>() - threshold;
+
+    // imposto la precisione numerica
+    boost::math::tools::eps_tolerance<double> tolerance(std::numeric_limits<double>::digits);
+    std::uintmax_t maxIteration = 50;
+
+    try
+    {
+      // eseguo TOMS748
+      std::pair<double, double> result = boost::math::tools::toms748_solve(f, left, right, tolerance, maxIteration);
+
+      // estraggo tau come punto medio del minuscolo intervallo risultante
+      tau = (result.first + result.second) / 2.0;
+
+      // ottenuto tau, ricavo c dalla seconda equazione parametrica
+      c = B / (1.0 - std::cos(tau));
+    }
+    catch (const std::exception &e)
+    {
+      spdlog::error("{} Errore durante il calcolo di TOMS748: {}", stdTAG, e.what());
+      emit drawingFinished();
+      return;
+    }
+  }
+
+  // (STEP 3) GENERAZIONE DEI PUNTI DELLA CURVA
+  int numPoints = 50;
+  points.reserve(numPoints);
+  points.append(QPointF(0.0, 0.0));
+
+  for (double i = 1.0; i <= numPoints; i += 1)
+  {
+    double t_i = (i / numPoints) * tau;
+
+    double x = c * (t_i - std::sin(t_i));
+    double y = c * (1.0 - std::cos(t_i));
+
+    points.append(QPointF(x, y));
+  }
+
+  // correzione del punto finale
+  points.last() = QPointF(A, B);
+
+  redrawCurve(points);
+
   spdlog::info(
-      "{} Disegnata la CICLOIDE con inizio: {} e fine: {}; utilizzando {} punti",
-      stdTAG,
+      "{} Disegnata la CICLOIDE (tau = {}, c = {}) con inizio: {} e fine: {}; utilizzando {} punti",
+      stdTAG, tau, c,
       pointToString(points.first()).toStdString(),
       pointToString(points.back()).toStdString(),
       points.count());
-  */
 
   emit drawingFinished();
 }
@@ -290,7 +376,7 @@ const double SimulationCanvas::computeTheoreticalTime() const
     double vMedia = (v1 + v2) / 2.0;
 
     // l'if serve per evitare divisioni per 0 o per valori impercettibili
-    if ((v1 + v2) > epsilonSpeed)
+    if ((v1 + v2) > threshold)
       totalTime += d / vMedia; // tempo = distanza / velocità
     else
     {
@@ -298,9 +384,9 @@ const double SimulationCanvas::computeTheoreticalTime() const
       // sta partendo da ferma. Non posso usare la velocità per calcolare il tempo (perché non ce n'è ancora!)
 
       double dy = y2 - y1;
-      if (dy > epsilonSpeed) // se non rispetta l'if allora sto aggiungendo 0.0 al tempo
+      if (dy > threshold) // se non rispetta l'if allora sto aggiungendo 0.0 al tempo
         // è la soluzione cinematica esatta per un corpo che scivola su un piano inclinato partendo da fermo
-        totalTime += std::sqrt(2.0 * std::pow(d, 2) / (gravity * dy));
+        totalTime += std::sqrt(2.0 * (d * d) / (gravity * dy));
     }
   }
 
