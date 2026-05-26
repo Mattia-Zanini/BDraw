@@ -16,6 +16,8 @@
 #include <QGraphicsPathItem>
 #include <QMouseEvent>
 #include <QPen>
+#include <QPainter>
+#include <QBrush>
 
 class SimulationCanvas : public QGraphicsView
 {
@@ -37,14 +39,18 @@ signals:
     void drawingFinished();    // segnala è terminato il disegno
     void simulationFinished(); // segnala il termine della simulazione
 
+public slots:
+    void drawRedDot(bool show);
+
 private:
     // Metodi per gestire gli eventi del mouse
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void drawBackground(QPainter *painter, const QRectF &rect) override;
 
-    const QString pointToString(const QPointF &) const;         // funzione per DEBUG e LOGGING
-    const QString pointsToString(const QList<QPointF> &) const; // funzione per DEBUG e LOGGING
+    const QString pointToString(const QPointF &) const;         // converte un punto nel formato stringa "(x, y)" (DEBUG)
+    const QString pointsToString(const QList<QPointF> &) const; // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
     void postProcessingCurve();                                 // tolgo i punti che non rispettano la crescita monotona in X.
     const double applyScale(const double pixels) const;         // Converte un valore da pixel a metri basandosi sulla scala impostata
 
@@ -52,9 +58,12 @@ private:
     const std::string TAG = this->metaObject()->className(); // nome della classe
     const std::string stdTAG = "[" + TAG + "]";
     const double gravity = 9.81;
-    const double threshold = 1e-6;
-    const double minMoveDistance = 5.0;
+    const double threshold = 1e-6;      // soglia minima per le operazioni
+    const double minMoveDistance = 5.0; // distanza minima fra un campione e l'altro (del disegno libero)
+    const int viewportMargin = 40;      // margine dai bordi della scena
+
     double pixelsPerMeter = 100.0;
+    bool showTargetPoint = false;
 
     QGraphicsScene *myScene;
     QPainterPath curve;

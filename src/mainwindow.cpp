@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QLabel>
+#include <QCheckBox>
 
 #include <QVector>
 
@@ -40,6 +41,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QPushButton *circleBtn = new QPushButton("Circonferenza", leftPanel);
     QPushButton *cycloidBtn = new QPushButton("Cicloide", leftPanel);
 
+    // checkbox per mostrare/nascondere il punto target
+    QCheckBox *showTargetCb = new QCheckBox("Mostra Target", leftPanel);
+    showTargetCb->setChecked(false);
+    showTargetCb->setStyleSheet("font-size: 14px; color: #ffffff");
+
     // stile default dei labels presenti nel pannello sinistro
     QString labelStyle = "font-size: 14px; color: #ffffff";
 
@@ -62,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     leftLayout->addWidget(clearBtn);
     leftLayout->addWidget(repeatBtn);
+    leftLayout->addWidget(showTargetCb);
 
     leftLayout->addSpacing(15);
 
@@ -79,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(lineBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawLine);
     connect(circleBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCircle);
     connect(cycloidBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCycloid);
+    connect(showTargetCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::drawRedDot);
 
     connect(clearBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::clearScene);
 
@@ -86,15 +94,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             [=]
             {
                 simulationCanvas->clearScene();
-                actualTimeLabel->setText("Tempo effettivo: ---");
+                timeLabel->setText("Tempo stimato: ---");
             });
 
     connect(simulationCanvas, &SimulationCanvas::drawingFinished, this,
             [=]
             {
                 double time = simulationCanvas->computeTheoreticalTime();
-                actualTimeLabel->setText(QString("Tempo effettivo: %1")
-                                             .arg(time));
+                timeLabel->setText(QString("Tempo stimato: %1 s")
+                                       .arg(time, 0, 'f', 3));
             });
 
     // infine imposto il widget centrale sulla MainWindow

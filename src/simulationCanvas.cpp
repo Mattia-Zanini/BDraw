@@ -61,6 +61,7 @@ void SimulationCanvas::clearScene()
 {
   points.clear();
   myScene->clear();
+
   pathItem = nullptr; // resetto il puntatore per non avere un dangling pointer
 
   spdlog::debug("{} Scena pulita", stdTAG);
@@ -97,8 +98,8 @@ void SimulationCanvas::drawLine()
   clearScene();
 
   // Punto finale dinamico basato sul viewport attuale con piccolo margine
-  double targetX = viewport()->width() - 40;
-  double targetY = viewport()->height() - 40;
+  double targetX = viewport()->width() - viewportMargin;
+  double targetY = viewport()->height() - viewportMargin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -122,8 +123,8 @@ void SimulationCanvas::drawCircle()
   clearScene();
 
   // Punto finale dinamico basato sul viewport attuale con piccolo margine
-  double targetX = viewport()->width() - 40;
-  double targetY = viewport()->height() - 40;
+  double targetX = viewport()->width() - viewportMargin;
+  double targetY = viewport()->height() - viewportMargin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -163,8 +164,8 @@ void SimulationCanvas::drawCycloid()
 {
   clearScene();
 
-  double targetX = viewport()->width() - 40;
-  double targetY = viewport()->height() - 40;
+  double targetX = viewport()->width() - viewportMargin;
+  double targetY = viewport()->height() - viewportMargin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -393,4 +394,28 @@ const double SimulationCanvas::computeTheoreticalTime() const
   spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", stdTAG, pixelsPerMeter, totalTime);
 
   return totalTime;
+}
+
+void SimulationCanvas::drawRedDot(bool show)
+{
+  showTargetPoint = show;
+  viewport()->update(); // richiede un aggiornamento grafico della vista
+}
+
+void SimulationCanvas::drawBackground(QPainter *painter, const QRectF &rect)
+{
+  QGraphicsView::drawBackground(painter, rect); // esegue il disegno di sfondo predefinito
+
+  if (showTargetPoint)
+  {
+    double targetX = viewport()->width() - viewportMargin;
+    double targetY = viewport()->height() - viewportMargin;
+    double targetMin = std::min(targetX, targetY);
+
+    painter->setBrush(QBrush(Qt::red));
+    painter->setPen(Qt::NoPen); // no bordo
+
+    // disegna il cerchio rosso centrato su targetMin con raggio di 5px
+    painter->drawEllipse(QPointF(targetMin, targetMin), 5.0, 5.0);
+  }
 }
