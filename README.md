@@ -24,11 +24,22 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
   - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
   - [Boost](https://www.boost.org/) (in particolare il modulo `boost-math` per funzioni speciali e costanti matematiche).
 
-Al momento, il software è stato testato e validato solo su **macOS**.
+Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
 
 ## Compilazione e Sviluppo
 
 Per semplificare l'installazione delle librerie esterne su qualsiasi sistema operativo (Windows, macOS, Linux), si consiglia l'uso del package manager **vcpkg**.
+
+### Installazione delle dipendenze di sistema (Linux/Ubuntu)
+
+Prima di iniziare a configurare il progetto su Ubuntu, è necessario installare sul sistema i compilatori, gli strumenti per vcpkg e le librerie di sviluppo di Qt6:
+
+```bash
+sudo apt update
+sudo apt install build-essential gfortran cmake ninja-build pkg-config \
+                 zip unzip tar curl wget autoconf autoconf-archive automake libtool \
+                 qt6-base-dev qt6-tools-dev qt6-l10n-tools
+```
 
 ### Gestione Dipendenze con VCPKG
 
@@ -40,7 +51,7 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
    - **macOS / Linux**:
      ```bash
      git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
-     ~/vcpkg/bootstrap-vcpkg.sh
+     ~/vcpkg/bootstrap-vcpkg.sh -disableMetrics
      # Aggiungi VCPKG_ROOT alle variabili d'ambiente (es. nel tuo ~/.zshrc o ~/.bashrc)
      export VCPKG_ROOT=$HOME/vcpkg
      ```
@@ -67,21 +78,37 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
 
 È possibile configurare e compilare il progetto da terminale specificando il toolchain file di vcpkg:
 
-```bash
-# 1. Configura il progetto generando la cartella di build
-cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release
+- **Su Linux (Ubuntu)** (usando Ninja per massimizzare le prestazioni di build):
+  ```bash
+  # 1. Configura il progetto generando la cartella di build
+  cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release
 
-# 2. Compila il progetto
-cmake --build build -j 8
-```
+  # 2. Compila il progetto
+  cmake --build build
+  ```
+
+- **Su macOS / Windows**:
+  ```bash
+  # 1. Configura il progetto generando la cartella di build
+  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release
+
+  # 2. Compila il progetto
+  cmake --build build -j 8
+  ```
 
 ### Esecuzione
 
-Una volta completata la compilazione, puoi avviare l'applicazione (solo su macOS):
+Una volta completata la compilazione, puoi avviare l'applicazione:
 
-```bash
-./BDraw.app/Contents/MacOS/BDraw
-```
+- **Su Linux (Ubuntu)**:
+  ```bash
+  ./build/BDraw
+  ```
+
+- **Su macOS**:
+  ```bash
+  ./build/BDraw.app/Contents/MacOS/BDraw
+  ```
 
 ## Documentazione e Approfondimenti
 
