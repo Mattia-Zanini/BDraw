@@ -20,31 +20,59 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
 - **Build System**: CMake 3.16+.
 - **Framework UI**: [Qt 6.10+](https://www.qt.io/) (consigliata l'ultima versione stabile).
 - **Librerie esterne**:
-  - [Armadillo](https://arma.sourceforge.net/) 15.2.6 (per il calcolo numerico).
-  - [spdlog](https://github.com/gabime/spdlog) 1.17.0 (per il logging di sistema).
+  - [Armadillo](https://arma.sourceforge.net/) (per il calcolo numerico).
+  - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
+  - [Boost](https://www.boost.org/) (in particolare il modulo `boost-math` per funzioni speciali e costanti matematiche).
 
-Al momento, il software è stato testato e validato esclusivamente su **macOS**.
+Al momento, il software è stato testato e validato solo su **macOS**.
 
 ## Compilazione e Sviluppo
 
-Per una corretta configurazione del progetto e delle sue dipendenze, si consiglia di utilizzare uno dei seguenti ambienti:
+Per semplificare l'installazione delle librerie esterne su qualsiasi sistema operativo (Windows, macOS, Linux), si consiglia l'uso del package manager **vcpkg**.
 
-1. **Qt Creator**: È l'approccio più diretto. È sufficiente aprire il file `CMakeLists.txt` e configurare il progetto utilizzando un Kit basato su Qt 6 (vedi requisiti)
-2. **Visual Studio Code**: Utilizzando l'estensione **CMake Tools**. Assicurarsi che il percorso di installazione di Qt sia correttamente configurato nelle impostazioni di CMake o nelle variabili d'ambiente.
+### Gestione Dipendenze con VCPKG
+
+Il progetto è configurato per installare automaticamente tutte le dipendenze necessarie (`spdlog`, `armadillo`, `boost` ed `openblas`) all'avvio della configurazione di CMake.
+
+1. **Installazione di VCPKG**:
+   Clona il repository ufficiale ed esegui lo script di bootstrap (per maggiori dettagli vedi [VCPKG_GUIDE.md](VCPKG_GUIDE.md)):
+
+   - **macOS / Linux**:
+     ```bash
+     git clone https://github.com/microsoft/vcpkg.git ~/vcpkg
+     ~/vcpkg/bootstrap-vcpkg.sh
+     # Aggiungi VCPKG_ROOT alle variabili d'ambiente (es. nel tuo ~/.zshrc o ~/.bashrc)
+     export VCPKG_ROOT=$HOME/vcpkg
+     ```
+   - **Windows (PowerShell)**:
+     ```powershell
+     git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+     C:\vcpkg\bootstrap-vcpkg.bat
+     # Configura la variabile d'ambiente dell'utente
+     [System.Environment]::SetEnvironmentVariable('VCPKG_ROOT', 'C:\vcpkg', 'User')
+     ```
+
+2. **Integrazione con l'IDE**:
+   - **Visual Studio Code**: Installa l'estensione **CMake Tools** e aggiungi la seguente proprietà al file `.vscode/settings.json` del workspace:
+     ```json
+     {
+         "cmake.configureSettings": {
+             "CMAKE_TOOLCHAIN_FILE": "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+         }
+     }
+     ```
+   - **Qt Creator**: Apri il file `CMakeLists.txt`. Nelle impostazioni del progetto alla voce *CMake configuration*, aggiungi una variabile di tipo percorso chiamata `CMAKE_TOOLCHAIN_FILE` puntandola a `<percorso_a_vcpkg>/scripts/buildsystems/vcpkg.cmake`.
 
 ### Build da riga di comando
 
-È possibile compilare il progetto direttamente da terminale utilizzando CMake:
+È possibile configurare e compilare il progetto da terminale specificando il toolchain file di vcpkg:
 
 ```bash
-# 1. Crea una directory di build (mantiene il progetto pulito)
-mkdir -p build && cd build
+# 1. Configura il progetto generando la cartella di build
+cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release
 
-# 2. Configura il progetto generando i file di build
-cmake ..
-
-# 3. Compila il progetto
-cmake --build .
+# 2. Compila il progetto
+cmake --build build -j 8
 ```
 
 ### Esecuzione
@@ -54,16 +82,6 @@ Una volta completata la compilazione, puoi avviare l'applicazione (solo su macOS
 ```bash
 ./BDraw.app/Contents/MacOS/BDraw
 ```
-
-### Documentazione Doxygen
-
-Per generare la documentazione del codice sorgente con Doxygen:
-
-```bash
-doxygen doxyconfig
-```
-
-Verrà generata la documentazione nelle cartelle `html/` e `latex/`.
 
 ## Documentazione e Approfondimenti
 
