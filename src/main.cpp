@@ -18,14 +18,27 @@ int main(int argc, char *argv[])
     // Crea un logger per la console che supporta i colori
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true);
+
+    // Imposta il livello del file sink a DEBUG in modo da registrare sempre tutti i dettagli
+    file_sink->set_level(spdlog::level::debug);
+
+    // Imposta il livello della console a seconda della modalità di compilazione
+#if defined(NDEBUG) || defined(QT_NO_DEBUG)
+    console_sink->set_level(spdlog::level::info);
+#else
+    console_sink->set_level(spdlog::level::debug);
+#endif
+
     std::vector<spdlog::sink_ptr> sinks {console_sink, file_sink};
     auto logger = std::make_shared<spdlog::logger>("multi_logger", sinks.begin(), sinks.end());
+    
+    // Imposta il livello del logger globale a DEBUG per permettere ai singoli sink di filtrare i messaggi
+    logger->set_level(spdlog::level::debug);
     spdlog::set_default_logger(logger);
 
     // Configura il pattern di spdlog: %^ e %$ racchiudono la parte del messaggio che deve 
     // essere colorata in base al livello (es. INFO in verde, WARN in giallo, ERROR in rosso).
     spdlog::set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
-    spdlog::set_level(spdlog::level::debug);
 
     // Installa il gestore dei messaggi personalizzato
     qInstallMessageHandler(qtMessageHandler);

@@ -503,12 +503,12 @@ void SimulationCanvas::drawBackground(QPainter *painter, const QRectF &rect)
 
 void SimulationCanvas::startSimulation()
 {
-  spdlog::info("{} Simulazione avviata", logTag, totSimulationSeconds);
   if (points.count() < 2) // non esiste nemmeno un segmento
   {
     emit simulationFinished();
     return;
   }
+  spdlog::info("{} Simulazione avviata", logTag, totSimulationSeconds);
 
   simulationClock->stop();
   state.zeros();

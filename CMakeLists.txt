@@ -76,6 +76,11 @@ target_link_libraries(BDraw PRIVATE
     Boost::boost
 )
 
+target_compile_definitions(BDraw PRIVATE
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>
+)
+
 
 # Gestione flessibile per Armadillo (target o variabile)
 if(TARGET Armadillo::Armadillo)

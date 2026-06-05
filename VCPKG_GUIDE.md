@@ -12,6 +12,19 @@ VCPKG è un package manager per C++ che risolve il problema delle librerie "manc
 Scegli una cartella sul tuo PC (es. la tua home o `C:\`) e clona il repository ufficiale:
 
 ### Su macOS / Linux
+
+Prima di iniziare, assicurati di avere installato gli strumenti di build richiesti dal sistema (necessari per compilare pacchetti come `libbacktrace` richiesto da Boost/spdlog):
+
+* **Su macOS (via Homebrew)**:
+  ```bash
+  brew install autoconf autoconf-archive automake libtool
+  ```
+* **Su Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt install autoconf autoconf-archive automake libtool
+  ```
+
+Successivamente clona e compila `vcpkg`:
 ```bash
 git clone https://github.com/microsoft/vcpkg.git
 ./vcpkg/bootstrap-vcpkg.sh

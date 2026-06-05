@@ -30,6 +30,8 @@ Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
 
 Per semplificare l'installazione delle librerie esterne su qualsiasi sistema operativo (Windows, macOS, Linux), si consiglia l'uso del package manager **vcpkg**.
 
+> **Consiglio sull'installazione di Qt**: Se non hai la necessità di utilizzare l'ambiente grafico **Qt Creator** per sviluppare, è fortemente consigliato installare Qt tramite i **package manager** (come `apt` su Linux o `Homebrew` su macOS) o strumenti leggeri come `aqtinstall`. Questo evita di dover scaricare l'intero installer ufficiale (Qt Online Installer), che richiede la creazione di un account ed occupa diversi gigabyte sul disco.
+
 ### Installazione delle dipendenze di sistema (Linux/Ubuntu)
 
 Prima di iniziare a configurare il progetto su Ubuntu, è necessario installare sul sistema i compilatori, gli strumenti per vcpkg e le librerie di sviluppo di Qt6:
@@ -46,9 +48,9 @@ sudo apt install build-essential gfortran cmake ninja-build pkg-config \
 Per evitare di installare l'intero ambiente di sviluppo pesante di Qt (come l'installer online ufficiale), è possibile installare una versione minimalista di Qt 6.10.0 utilizzando gestori di pacchetti o lo strumento a riga di comando `aqtinstall`.
 
 #### 1. macOS (via Homebrew)
-Homebrew consente di installare Qt6 con un singolo comando, in modo del tutto analogo ad `apt` su Ubuntu:
+Homebrew consente di installare Qt6 e gli strumenti di build richiesti per compilare alcune dipendenze di `vcpkg` (come `libbacktrace` usato da Boost/spdlog):
 ```bash
-brew install qt
+brew install qt autoconf autoconf-archive automake libtool
 ```
 *(Nota: il percorso in cui viene installato Qt6 tramite Homebrew è solitamente `/opt/homebrew/opt/qt`)*.
 
@@ -73,6 +75,14 @@ brew install qt
      ```cmd
      aqt install-qt windows desktop 6.10.0 win64_mingw
      ```
+
+#### 3. macOS, Windows e Linux (via installatore ufficiale Qt / Qt Creator)
+Se hai installato Qt tramite l'installer ufficiale (Qt Online Installer), la libreria si troverà solitamente in una sottocartella della tua cartella home (o in `C:\` su Windows):
+* **Su macOS**: ad esempio in `~/Qt/6.10.3/macos/`
+* **Su Windows**: ad esempio in `C:\Qt\6.10.3\msvc2022_64\` o `C:\Qt\6.10.3\mingw_64\`
+* **Su Linux**: ad esempio in `~/Qt/6.10.3/gcc_64/`
+
+In questo caso, non hai pacchetti di sistema globali e dovrai individuare manualmente questo percorso sul tuo disco per impostarlo come `CMAKE_PREFIX_PATH` durante la configurazione o nell'IDE.
 
 ---
 
@@ -107,6 +117,7 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
              "CMAKE_TOOLCHAIN_FILE": "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
              // Rimuovi il commento e imposta il percorso corretto per la tua installazione:
              // "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/qt" (Homebrew su macOS)
+             // "CMAKE_PREFIX_PATH": "/Users/TUO_UTENTE/Qt/6.10.3/macos" (Installatore ufficiale su macOS)
              // "CMAKE_PREFIX_PATH": "C:/Qt/6.10.0/msvc2022_64" (aqtinstall su Windows con MSVC)
              // "CMAKE_PREFIX_PATH": "C:/Qt/6.10.0/mingw_64" (aqtinstall su Windows con MinGW)
          }
@@ -116,12 +127,14 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
 
 ### Build da riga di comando
 
-È possibile configurare e compilare il progetto da terminale specificando il toolchain file di vcpkg e, se non usi l'installazione di sistema predefinita (ad es. su Ubuntu), specificando il percorso del framework tramite `CMAKE_PREFIX_PATH`:
+È possibile configurare e compilare il progetto da terminale specificando il toolchain file di vcpkg e, se non usi l'installazione di sistema predefinita (ad es. su Ubuntu), specificando il percorso del framework tramite `CMAKE_PREFIX_PATH`.
+
+Di default, nei comandi seguenti viene configurata la modalità **Debug** per abilitare tutti i log di tracciamento. Se si desidera compilare in modalità **Release** (ottimizzata e senza log di debug), è sufficiente sostituire `-DCMAKE_BUILD_TYPE=Debug` con `-DCMAKE_BUILD_TYPE=Release` durante la configurazione (o specificare `--config Release` durante la build su Windows/MSVC).
 
 - **Su Linux (Ubuntu)** (usando Ninja per massimizzare le prestazioni di build):
   ```bash
-  # 1. Configura il progetto (Qt6 viene trovato automaticamente nei percorsi di sistema)
-  cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Release
+  # 1. Configura il progetto in modalità Debug
+  cmake -B build -S . -G Ninja -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=Debug
 
   # 2. Compila il progetto
   cmake --build build
@@ -129,8 +142,17 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
 
 - **Su macOS (con Qt installato via Homebrew)**:
   ```bash
-  # 1. Configura specificando il percorso CMAKE_PREFIX_PATH di Homebrew
-  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt" -DCMAKE_BUILD_TYPE=Release
+  # 1. Configura specificando il percorso CMAKE_PREFIX_PATH di Homebrew in modalità Debug
+  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt" -DCMAKE_BUILD_TYPE=Debug
+
+  # 2. Compila il progetto
+  cmake --build build -j 8
+  ```
+
+- **Su macOS (con Qt installato via installer ufficiale / Qt Creator)**:
+  ```bash
+  # 1. Configura specificando la cartella di Qt nella home (es. versione 6.10.3)
+  cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="$HOME/Qt/6.10.3/macos" -DCMAKE_BUILD_TYPE=Debug
 
   # 2. Compila il progetto
   cmake --build build -j 8
@@ -142,23 +164,23 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
   *   **Windows (compilatore MSVC 2022)**:
       ```cmd
       :: Configura specificando il toolchain e la cartella del compilatore MSVC di Qt 6.10.0
-      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="C:/Qt/6.10.0/msvc2022_64" -DCMAKE_BUILD_TYPE=Release
+      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="C:/Qt/6.10.0/msvc2022_64"
       
-      :: Compila specificando la configurazione Release
-      cmake --build build --config Release
+      :: Compila specificando la configurazione desiderata (Debug o Release)
+      cmake --build build --config Debug
       ```
   *   **Windows (compilatore MinGW)**:
       ```cmd
-      :: Configura specificando il toolchain e la cartella di MinGW di Qt 6.10.0
-      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="C:/Qt/6.10.0/mingw_64" -DCMAKE_BUILD_TYPE=Release
+      :: Configura specificando il toolchain e la cartella di MinGW di Qt 6.10.0 in modalità Debug
+      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="C:/Qt/6.10.0/mingw_64" -DCMAKE_BUILD_TYPE=Debug
       
       :: Compila
       cmake --build build
       ```
   *   **macOS (compilatore Clang)**:
       ```bash
-      # Configura specificando il toolchain e la cartella clang_64 di Qt 6.10.0
-      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="$HOME/Qt/6.10.0/clang_64" -DCMAKE_BUILD_TYPE=Release
+      # Configura specificando il toolchain e la cartella clang_64 di Qt 6.10.0 in modalità Debug
+      cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="$HOME/Qt/6.10.0/clang_64" -DCMAKE_BUILD_TYPE=Debug
       
       # Compila
       cmake --build build -j 8
