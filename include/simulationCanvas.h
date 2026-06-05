@@ -5,6 +5,7 @@
 
 #include <libassert/assert.hpp>
 #include <spdlog/spdlog.h>
+#include <armadillo>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/beta.hpp>
@@ -18,6 +19,9 @@
 #include <QPen>
 #include <QPainter>
 #include <QBrush>
+#include <QElapsedTimer>
+#include <QTimer>
+#include <vector>
 
 class SimulationCanvas : public QGraphicsView
 {
@@ -34,6 +38,7 @@ public:
     void drawCycloid();                                // disegna una cicloide
     void drawCircle();                                 // disegna un arco di circonferenza
     const double computeTheoreticalTime() const;       // calcola il tempo teorico di una curva
+    void startSimulation();                            // avvia la simulazione e l'animazione
 
 signals:
     void drawingFinished();    // segnala è terminato il disegno
@@ -49,28 +54,40 @@ private:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void drawBackground(QPainter *painter, const QRectF &rect) override;
 
-    const QString pointToString(const QPointF &) const;         // converte un punto nel formato stringa "(x, y)" (DEBUG)
-    const QString pointsToString(const QList<QPointF> &) const; // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
-    void postProcessingCurve();                                 // tolgo i punti che non rispettano la crescita monotona in X.
-    const double applyScale(const double pixels) const;         // Converte un valore da pixel a metri basandosi sulla scala impostata
+    const QString pointToString(const QPointF &) const;                           // converte un punto nel formato stringa "(x, y)" (DEBUG)
+    const QString pointsToString(const QList<QPointF> &) const;                   // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
+    void postProcessingCurve();                                                   // tolgo i punti che non rispettano la crescita monotona in X.
+    const double applyScale(const double pixels) const;                           // Converte un valore da pixel a metri basandosi sulla scala impostata
+    const double getScaledPointsDistance(const QPointF &, const QPointF &) const; // calcola la distanza euclidea fra 2 punti
+    const double getSlopeAt() const;                                              // ritorna la pendenza del segmento corrente in cui si trova la pallina
+    void computeCumulativeDistance();
+    void updatePhysics();
 
     // Attributi
-    const std::string TAG = this->metaObject()->className(); // nome della classe
-    const std::string stdTAG = "[" + TAG + "]";
+    const std::string classTag = this->metaObject()->className(); // nome della classe
+    const std::string logTag = "[" + classTag + "]";
     const double gravity = 9.81;
     const double threshold = 1e-6;      // soglia minima per le operazioni
     const double minMoveDistance = 5.0; // distanza minima fra un campione e l'altro (del disegno libero)
-    const int viewportMargin = 40;      // margine dai bordi della scena
+    const int margin = 40;              // margine dai bordi della scena
+    const int ballRadius = 6;
+    const int deltaTime = 16; // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
 
     double pixelsPerMeter = 100.0;
-    bool showTargetPoint = false;
+    bool showTarget = false;
 
-    QGraphicsScene *myScene;
+    QGraphicsScene *scene;
     QPainterPath curve;
-    QPen myPen;
-    QGraphicsPathItem *pathItem;
+    QPen pen;
+    QGraphicsPathItem *curveItem;
+    QGraphicsEllipseItem *ballItem;
     QList<QPointF> points;
-    bool isDrawing;
+    bool isUserDrawing;
+    arma::vec state;                        // stato del sistema
+    QTimer *simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
+    QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
+    QElapsedTimer totalSimulationTime;      // misura la durata totale dell'intera simulazione
+    std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
 };
 
 #endif // SIMULATIONCANVAS_H

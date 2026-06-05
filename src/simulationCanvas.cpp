@@ -5,7 +5,41 @@
 SimulationCanvas::~SimulationCanvas()
 {
   clearScene();
-  spdlog::debug("{} SimulationCanvas distrutto correttamente", stdTAG);
+  spdlog::debug("{} SimulationCanvas distrutto correttamente", logTag);
+}
+
+// Inizializza il widget e configura la scena grafica e la fisica.
+SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
+{
+  // imposto la scena
+  scene = new QGraphicsScene(this);
+  setScene(scene);
+
+  // abilito l'antialiasing per rendere fluide le linee della curva e della pallina
+  setRenderHint(QPainter::Antialiasing);
+
+  // disabilito le barre di scorrimento per mantenere la vista fissa sul piano cartesiano
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  // definisco l'area logica della scena in modo che sia identica alle dimensioni fisiche attuali della vista in cui viene mostrata
+  scene->setSceneRect(viewport()->rect());
+  // imposto l'allineamento della scena in modo tale che l'angolo in alto a sinistra corrisponda al punto (x=0, y=0)
+  setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+  // init delle variabili
+  isUserDrawing = false;
+  pen = QPen(Qt::cyan, 2);
+  state = arma::vec(2, arma::fill::zeros);
+  curveItem = nullptr;
+  ballItem = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
+  ballItem->setBrush(QBrush(Qt::white)); // Pallina bianca
+  ballItem->setZValue(100);
+  scene->addItem(ballItem);
+  simulationClock = new QTimer(this);
+  connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics); // connetto il clock all'update della simulazione
+
+  spdlog::debug("{} SimulationCanvas inizializzato correttamente", logTag);
 }
 
 const QString SimulationCanvas::pointToString(const QPointF &p) const
@@ -31,46 +65,48 @@ const double SimulationCanvas::applyScale(const double pixels) const
   return pixels / pixelsPerMeter;
 }
 
-// Inizializza il widget e configura la scena grafica e la fisica.
-SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
-{
-  // imposto la scena
-  myScene = new QGraphicsScene(this);
-  setScene(myScene);
-
-  // abilito l'antialiasing per rendere fluide le linee della curva e della pallina
-  setRenderHint(QPainter::Antialiasing);
-
-  // disabilito le barre di scorrimento per mantenere la vista fissa sul piano cartesiano
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-  // definisco l'area logica della scena in modo che sia identica alle dimensioni fisiche attuali della vista in cui viene mostrata
-  myScene->setSceneRect(viewport()->rect());
-  // imposto l'allineamento della scena in modo tale che l'angolo in alto a sinistra corrisponda al punto (x=0, y=0)
-  setAlignment(Qt::AlignLeft | Qt::AlignTop);
-
-  // init delle variabili
-  myPen = QPen(Qt::cyan, 2);
-  pathItem = nullptr;
-
-  spdlog::debug("{} SimulationCanvas inizializzato correttamente", stdTAG);
-}
-
 void SimulationCanvas::clearScene()
 {
   points.clear();
-  myScene->clear();
+  cumulativeDistance.clear();
+  scene->clear();
 
-  pathItem = nullptr; // resetto il puntatore per non avere un dangling pointer
+  curveItem = nullptr; // resetto il puntatore per non avere un dangling pointer
+  ballItem->hide();
 
-  spdlog::debug("{} Scena pulita", stdTAG);
+  spdlog::debug("{} Scena pulita", logTag);
+}
+
+const double SimulationCanvas::getScaledPointsDistance(const QPointF &p1, const QPointF &p2) const
+{
+  double x1 = applyScale(p1.x());
+  double y1 = applyScale(p1.y());
+  double x2 = applyScale(p2.x());
+  double y2 = applyScale(p2.y());
+
+  return std::hypot(x2 - x1, y2 - y1);
+}
+
+void SimulationCanvas::computeCumulativeDistance()
+{
+  if (points.count() < 2)
+    return;
+
+  DEBUG_ASSERT(cumulativeDistance.empty() == true, "il vettore delle distanze cumulative deve essere pulito prima di calcolarne di nuove");
+  cumulativeDistance.reserve(points.count() - 1); // da n punti ottengo n-1 segmenti
+  double s = 0.0;
+
+  for (int i = 1; i < points.count(); i++)
+  {
+    s += getScaledPointsDistance(points[i - 1], points[i]);
+    cumulativeDistance.push_back(s);
+  }
 }
 
 void SimulationCanvas::redrawCurve(const QList<QPointF> &newPoints)
 {
   points = newPoints;
-  curve = QPainterPath(); // fa da "contenitore" logico per le operazioni di disegno.
+  curve = QPainterPath();
 
   if (!points.isEmpty())
   {
@@ -79,17 +115,17 @@ void SimulationCanvas::redrawCurve(const QList<QPointF> &newPoints)
       curve.lineTo(points[i]); // traccio un segmento dal punto precedente al successivo
   }
 
-  if (pathItem)
+  if (curveItem)
   {
-    pathItem->setPath(curve);
-    spdlog::debug("{} pathItem settato", stdTAG);
+    curveItem->setPath(curve);
+    spdlog::debug("{} curveItem settato", logTag);
   }
   else
   {
     // creo fisicamente l'elemento applicando il tratto della myPen,
     // trasferisco automaticamente l'ownership alla scena e mi salvo il puntatore
-    pathItem = myScene->addPath(curve, myPen);
-    spdlog::debug("{} pathItem aggiunto alla scena", stdTAG);
+    curveItem = scene->addPath(curve, pen);
+    spdlog::debug("{} curveItem aggiunto alla scena", logTag);
   }
 }
 
@@ -98,8 +134,8 @@ void SimulationCanvas::drawLine()
   clearScene();
 
   // Punto finale dinamico basato sul viewport attuale con piccolo margine
-  double targetX = viewport()->width() - viewportMargin;
-  double targetY = viewport()->height() - viewportMargin;
+  double targetX = viewport()->width() - margin;
+  double targetY = viewport()->height() - margin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -110,10 +146,12 @@ void SimulationCanvas::drawLine()
 
   spdlog::info(
       "{} Disegnata la RETTA con inizio: {} e fine: {}; utilizzando {} punti",
-      stdTAG,
+      logTag,
       pointToString(points.first()).toStdString(),
       pointToString(points.back()).toStdString(),
       points.count());
+
+  computeCumulativeDistance();
 
   emit drawingFinished();
 }
@@ -123,8 +161,8 @@ void SimulationCanvas::drawCircle()
   clearScene();
 
   // Punto finale dinamico basato sul viewport attuale con piccolo margine
-  double targetX = viewport()->width() - viewportMargin;
-  double targetY = viewport()->height() - viewportMargin;
+  double targetX = viewport()->width() - margin;
+  double targetY = viewport()->height() - margin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -150,12 +188,14 @@ void SimulationCanvas::drawCircle()
 
   spdlog::info(
       "{} Disegnato l'ARCO di circonferenza con inizio: {} e fine: {}; utilizzando {} punti",
-      stdTAG,
+      logTag,
       pointToString(points.first()).toStdString(),
       pointToString(points.back()).toStdString(),
       points.count());
 
-  spdlog::debug("{} points.toString()\n{}", stdTAG, pointsToString(points).toStdString());
+  spdlog::debug("{} points.toString()\n{}", logTag, pointsToString(points).toStdString());
+
+  computeCumulativeDistance();
 
   emit drawingFinished();
 }
@@ -164,8 +204,8 @@ void SimulationCanvas::drawCycloid()
 {
   clearScene();
 
-  double targetX = viewport()->width() - viewportMargin;
-  double targetY = viewport()->height() - viewportMargin;
+  double targetX = viewport()->width() - margin;
+  double targetY = viewport()->height() - margin;
 
   double targetMin = std::min(targetX, targetY);
 
@@ -219,7 +259,7 @@ void SimulationCanvas::drawCycloid()
     }
     catch (const std::exception &e)
     {
-      spdlog::error("{} Errore durante il calcolo di TOMS748: {}", stdTAG, e.what());
+      spdlog::error("{} Errore durante il calcolo di TOMS748: {}", logTag, e.what());
       emit drawingFinished();
       return;
     }
@@ -247,10 +287,12 @@ void SimulationCanvas::drawCycloid()
 
   spdlog::info(
       "{} Disegnata la CICLOIDE (tau = {}, c = {}) con inizio: {} e fine: {}; utilizzando {} punti",
-      stdTAG, tau, c,
+      logTag, tau, c,
       pointToString(points.first()).toStdString(),
       pointToString(points.back()).toStdString(),
       points.count());
+
+  computeCumulativeDistance();
 
   emit drawingFinished();
 }
@@ -262,9 +304,9 @@ void SimulationCanvas::mousePressEvent(QMouseEvent *event)
   {
     if (points.isEmpty())
     {
-      spdlog::debug("{} Inizio di un nuovo disegno", stdTAG);
+      spdlog::debug("{} Inizio di un nuovo disegno", logTag);
       QPointF scenePoint = mapToScene(event->pos()); // converto la posizione del click dalla vista alla scena
-      isDrawing = true;
+      isUserDrawing = true;
 
       curve = QPainterPath();
       points.append(QPointF(0, 0)); // il primo punto deve essere SEMPRE l'origine
@@ -272,11 +314,11 @@ void SimulationCanvas::mousePressEvent(QMouseEvent *event)
 
       points.append(scenePoint);
       curve.lineTo(points[1]); // disegno il tratto che va dall'origine al primo punto
-      pathItem = myScene->addPath(curve, myPen);
+      curveItem = scene->addPath(curve, pen);
     }
     else
     {
-      spdlog::debug("{} Per disegnare un nuovo percorso bisogna prima pulire la scena", stdTAG);
+      spdlog::debug("{} Per disegnare un nuovo percorso bisogna prima pulire la scena", logTag);
     }
   }
 
@@ -290,7 +332,7 @@ void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
   // verifico se il tasto sinistro è attualmente ancora premuto
   if (event->buttons() & Qt::LeftButton)
   {
-    if (isDrawing && pathItem)
+    if (isUserDrawing && curveItem)
     {
       QPointF scenePoint = mapToScene(event->pos());
       // Controllo che i punti siano almeno un pochino distanziati fra di loro
@@ -298,7 +340,7 @@ void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
       {
         points.append(scenePoint);
         curve.lineTo(scenePoint);
-        pathItem->setPath(curve);
+        curveItem->setPath(curve);
       }
     }
   }
@@ -310,11 +352,12 @@ void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
 void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
 {
   // verifico se è stato rilasciato il tasto
-  if (event->button() == Qt::LeftButton && isDrawing)
+  if (event->button() == Qt::LeftButton && isUserDrawing)
   {
-    isDrawing = false; // il disegno è terminato
-    spdlog::debug("{} Disegno terminato", stdTAG);
+    isUserDrawing = false; // il disegno è terminato
+    spdlog::debug("{} Disegno terminato", logTag);
     postProcessingCurve();
+    computeCumulativeDistance();
 
     emit drawingFinished();
   }
@@ -327,7 +370,7 @@ void SimulationCanvas::postProcessingCurve()
   if (points.size() < 2) // non serve processare 1 punto solo (o 0)
     return;
 
-  spdlog::debug("{} PRE: sono presenti {} punti", stdTAG, points.size());
+  spdlog::debug("{} PRE: sono presenti {} punti", logTag, points.size());
   QList<QPointF> processedPoints;
   processedPoints.append(points.first());
 
@@ -343,7 +386,7 @@ void SimulationCanvas::postProcessingCurve()
   points = processedPoints;
 
   redrawCurve(points);
-  spdlog::debug("{} Curva processata, ora sono presenti {} punti", stdTAG, points.size());
+  spdlog::debug("{} Curva processata, ora sono presenti {} punti", logTag, points.size());
 }
 
 const double SimulationCanvas::computeTheoreticalTime() const
@@ -357,13 +400,11 @@ const double SimulationCanvas::computeTheoreticalTime() const
 
   for (int i = 0; i < points.count() - 1; i++)
   {
-    double x1 = applyScale(points[i].x());
     double y1 = applyScale(points[i].y());
-    double x2 = applyScale(points[i + 1].x());
     double y2 = applyScale(points[i + 1].y());
 
     // pitagora
-    double d = std::hypot(x2 - x1, y2 - y1);
+    double d = getScaledPointsDistance(points[i], points[i + 1]);
 
     // VELOCITA': sqrt(2 * g * Δy), dalla conservazione dell'energia
     // il max, serve per proteggere i calcoli in caso di valori negativi
@@ -391,14 +432,14 @@ const double SimulationCanvas::computeTheoreticalTime() const
     }
   }
 
-  spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", stdTAG, pixelsPerMeter, totalTime);
+  spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", logTag, pixelsPerMeter, totalTime);
 
   return totalTime;
 }
 
 void SimulationCanvas::drawRedDot(bool show)
 {
-  showTargetPoint = show;
+  showTarget = show;
   viewport()->update(); // richiede un aggiornamento grafico della vista
 }
 
@@ -406,10 +447,10 @@ void SimulationCanvas::drawBackground(QPainter *painter, const QRectF &rect)
 {
   QGraphicsView::drawBackground(painter, rect); // esegue il disegno di sfondo predefinito
 
-  if (showTargetPoint)
+  if (showTarget)
   {
-    double targetX = viewport()->width() - viewportMargin;
-    double targetY = viewport()->height() - viewportMargin;
+    double targetX = viewport()->width() - margin;
+    double targetY = viewport()->height() - margin;
     double targetMin = std::min(targetX, targetY);
 
     painter->setBrush(QBrush(Qt::red));
@@ -418,4 +459,28 @@ void SimulationCanvas::drawBackground(QPainter *painter, const QRectF &rect)
     // disegna il cerchio rosso centrato su targetMin con raggio di 5px
     painter->drawEllipse(QPointF(targetMin, targetMin), 5.0, 5.0);
   }
+}
+
+void SimulationCanvas::startSimulation()
+{
+  if (points.count() < 2) // non esiste nemmeno un segmento
+    return;
+
+  state.zeros();
+  ballItem->show();
+  double curveTotalLength = cumulativeDistance.back();
+
+  // avvio i timer e il clock
+  simulationClock->start(deltaTime);
+  totalSimulationTime.start();
+  elapsedTime.start();
+}
+
+void SimulationCanvas::updatePhysics()
+{
+  double dt = elapsedTime.restart() / 1000.0; // Calcolo del delta-time reale, in secondi
+
+  // Protezione contro lag improvvisi del sistema ( > 50 ms )
+  if (dt > 0.05)
+    dt = deltaTime / 1000.0; // = 0.016 s
 }

@@ -103,6 +103,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 double time = simulationCanvas->computeTheoreticalTime();
                 timeLabel->setText(QString("Tempo stimato: %1 s")
                                        .arg(time, 0, 'f', 3));
+                
+                simulationCanvas->startSimulation();
             });
 
     // infine imposto il widget centrale sulla MainWindow
