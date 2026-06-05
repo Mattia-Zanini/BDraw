@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h> // Necessario per i log colorati
+#include <spdlog/sinks/basic_file_sink.h>
+#include <vector>
 
 #include <QApplication>
 #include <QLocale>
@@ -14,8 +16,11 @@ void qtMessageHandler(QtMsgType type, const QMessageLogContext &context, const Q
 int main(int argc, char *argv[])
 {
     // Crea un logger per la console che supporta i colori
-    auto console = spdlog::stdout_color_mt("console");
-    spdlog::set_default_logger(console);
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true);
+    std::vector<spdlog::sink_ptr> sinks {console_sink, file_sink};
+    auto logger = std::make_shared<spdlog::logger>("multi_logger", sinks.begin(), sinks.end());
+    spdlog::set_default_logger(logger);
 
     // Configura il pattern di spdlog: %^ e %$ racchiudono la parte del messaggio che deve 
     // essere colorata in base al livello (es. INFO in verde, WARN in giallo, ERROR in rosso).

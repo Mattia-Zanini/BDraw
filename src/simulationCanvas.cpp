@@ -30,13 +30,14 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
   // init delle variabili
   isUserDrawing = false;
   pen = QPen(Qt::cyan, 2);
-  state = arma::vec(2, arma::fill::zeros);
+  state = arma::vec2(arma::fill::zeros);
   curveItem = nullptr;
   ballItem = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
   ballItem->setBrush(QBrush(Qt::white)); // Pallina bianca
   ballItem->setZValue(100);
   ballItem->hide();
   scene->addItem(ballItem);
+  metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
   simulationClock = new QTimer(this);
   connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics); // connetto il clock all'update della simulazione
@@ -66,7 +67,8 @@ const QString SimulationCanvas::pointsToString(const QList<QPointF> &pList) cons
 
 const double SimulationCanvas::applyScale(const double pixels) const
 {
-  return pixels / pixelsPerMeter;
+  // più metersPerPixel è grande, più metri corrispondono a quel pixel
+  return pixels * metersPerPixel;
 }
 
 void SimulationCanvas::clearScene()
@@ -128,7 +130,7 @@ const int SimulationCanvas::getSegmentIndex(double s) const
   return i;
 }
 
-const double SimulationCanvas::getSlopeSineAt(double s) const
+const double SimulationCanvas::getSineAt(double s) const
 {
   DEBUG_ASSERT(cumulativeDistance.size() > 0, "Deve essere presente almeno un segmento");
 
@@ -415,7 +417,7 @@ void SimulationCanvas::postProcessingCurve()
   qreal min = 0;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() >= min && points[i].y() >= 0)
+    if (points[i].x() >= min && points[i].y() >= threshold)
     {
       processedPoints.append(points[i]);
       min = points[i].x();
@@ -434,7 +436,7 @@ const double SimulationCanvas::computeTheoreticalTime() const
   if (points.count() < 2)
     return 0.0;
 
-  double yStart = points[0].y(); // non applico la scala, perché il primo punto è sempre l'origine
+  double yStart = applyScale(points[0].y());
 
   for (int i = 0; i < points.count() - 1; i++)
   {
@@ -446,8 +448,8 @@ const double SimulationCanvas::computeTheoreticalTime() const
 
     // VELOCITA': sqrt(2 * g * Δy), dalla conservazione dell'energia
     // il max, serve per proteggere i calcoli in caso di valori negativi
-    double v1 = std::sqrt(std::max(0.0, 2.0 * gravity) * (y1 - yStart)); // sqrt[2g(y1 - 0)] = ⎷(2g*y1)
-    double v2 = std::sqrt(std::max(0.0, 2.0 * gravity) * (y2 - yStart)); // sqrt(2g*y2)
+    double v1 = std::sqrt(std::max(0.0, 2.0 * gravity * (y1 - yStart))); // sqrt[2g(y1 - 0)] = ⎷(2g*y1)
+    double v2 = std::sqrt(std::max(0.0, 2.0 * gravity * (y2 - yStart))); // sqrt(2g*y2)
 
     // v1: la velocità con cui la pallina entra in quel segmento (basata su quanto è scesa dall'inizio fino al punto 1)
     // v2: la velocità con cui la pallina esce da quel segmento (basata su quanto è scesa dall'inizio fino al punto 2)
@@ -470,7 +472,7 @@ const double SimulationCanvas::computeTheoreticalTime() const
     }
   }
 
-  spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", logTag, pixelsPerMeter, totalTime);
+  spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", logTag, metersPerPixel, totalTime);
 
   return totalTime;
 }
@@ -508,10 +510,14 @@ void SimulationCanvas::startSimulation()
     return;
   }
 
+  simulationClock->stop();
   state.zeros();
   updateBallPosition(0.0);
   ballItem->show();
+  totSimulationSeconds = 0.0;
   double curveTotalLength = cumulativeDistance.back();
+
+  spdlog::debug("{} punti della curva\n{}", logTag, pointsToString(points).toStdString());
 
   // avvio i timer e il clock
   simulationClock->start(deltaTimeMilliseconds);
@@ -527,17 +533,17 @@ void SimulationCanvas::updatePhysics()
   if (dt > 0.05) // persi più di 3 frame
     dt = deltaTimeSeconds;
 
-  double slopeSine = getSlopeSineAt(clampDistance(state(0))); // seno dell'inclinazione( s(k) ) = sin(theta)
+  double sine = getSineAt(clampDistance(state(0))); // sin(s(k))
   arma::mat A = {{1.0, dt},
                  {0.0, 1}};
-  arma::vec2 B = {0.0, dt * slopeSine}; // B = [ 0, dt * seno dell'inclinazione ]^T
-  double u = gravity;                   // vettore d'ingresso u(k) = g
+  arma::vec2 B = {0.0, dt * sine}; // B = [ 0, dt * seno ]^T
+  double u = gravity; // vettore d'ingresso u(k) = g
 
   // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
   state = A * state + B * u;
 
   state(0) = clampDistance(state(0));
-  spdlog::debug("{} x(k + 1) = [{}, {}]^T , slopeSine: {}", logTag, state(0), state(1), slopeSine);
+  spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
   double s = state(0);
   double velocity = state(1);
   double L = cumulativeDistance.back();
@@ -579,7 +585,7 @@ void SimulationCanvas::updateBallPosition(const double s)
   double offsetY = n(1) * (ballRadius + 1);
 
   // aggiornamento della posizione visiva
-  double percent = curve.percentAtLength(s * pixelsPerMeter);
+  double percent = curve.percentAtLength(s / metersPerPixel);
   QPointF pos = curve.pointAtPercent(percent); // ottengo la posizione (x,y) della pallina sulla curva (senza offset)
   ballItem->setPos(pos.x() + offsetX - ballRadius, pos.y() + offsetY - ballRadius);
 }

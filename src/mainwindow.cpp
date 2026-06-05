@@ -107,6 +107,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 simulationCanvas->startSimulation();
             });
 
+    connect(repeatBtn, &QPushButton::clicked, this,
+            [=]
+            {
+                actualTimeLabel->setText("Tempo effettivo: ---");
+                simulationCanvas->startSimulation();
+            });
+
     connect(simulationCanvas, &SimulationCanvas::simulationFinished, this,
             [=]
             {

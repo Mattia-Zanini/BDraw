@@ -58,14 +58,14 @@ private:
     const QString pointToString(const QPointF &) const;                           // converte un punto nel formato stringa "(x, y)" (DEBUG)
     const QString pointsToString(const QList<QPointF> &) const;                   // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
     void postProcessingCurve();                                                   // tolgo i punti che non rispettano la crescita monotona in X.
-    const double applyScale(const double pixels) const;                           // Converte un valore da pixel a metri basandosi sulla scala impostata
+    const double applyScale(const double) const;                           // Converte un valore da pixel a metri basandosi sulla scala impostata
     const double getScaledPointsDistance(const QPointF &, const QPointF &) const; // calcola la distanza euclidea fra 2 punti
-    const double getSlopeSineAt(const double) const;                              // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
+    const double getSineAt(const double) const;                                   // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
     void computeCumulativeDistance();
     void updatePhysics();
     void updateBallPosition(const double s);
-    const double clampDistance(const double) const;      // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
-    const int getSegmentIndex(const double) const; // ritorna l'indice del segmento rispetto alla distanza cumulativa
+    const double clampDistance(const double) const; // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
+    const int getSegmentIndex(const double) const;  // ritorna l'indice del segmento rispetto alla distanza cumulativa
 
     // Attributi
     const std::string classTag = this->metaObject()->className(); // nome della classe
@@ -78,7 +78,6 @@ private:
     const int deltaTimeMilliseconds = 16;  // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
     const double deltaTimeSeconds = 0.016; // espresso in secondi
 
-    double pixelsPerMeter = 100.0;
     bool showTarget = false;
 
     QGraphicsScene *scene;
@@ -88,6 +87,7 @@ private:
     QGraphicsEllipseItem *ballItem;
     QList<QPointF> points;
     bool isUserDrawing;
+    double metersPerPixel;
     arma::vec2 state;                       // stato del sistema
     QTimer *simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
