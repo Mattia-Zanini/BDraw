@@ -31,6 +31,7 @@ Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
 
 Per semplificare l'installazione delle librerie esterne su qualsiasi sistema operativo (Windows, macOS, Linux), si consiglia l'uso del package manager **vcpkg**.
 
+> [!TIPS]
 > **Consiglio sull'installazione di Qt**: Se non hai la necessità di utilizzare l'ambiente grafico **Qt Creator** per sviluppare, è fortemente consigliato installare Qt tramite i **package manager** (come `apt` su Linux o `Homebrew` su macOS) o strumenti leggeri come `aqtinstall`. Questo evita di dover scaricare l'intero installer ufficiale (Qt Online Installer), che richiede la creazione di un account ed occupa diversi gigabyte sul disco.
 
 ### Installazione delle dipendenze di sistema (Linux/Ubuntu)
