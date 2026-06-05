@@ -39,6 +39,7 @@ public:
     void drawCircle();                                 // disegna un arco di circonferenza
     const double computeTheoreticalTime() const;       // calcola il tempo teorico di una curva
     void startSimulation();                            // avvia la simulazione e l'animazione
+    const double getSimulationTime() const;
 
 signals:
     void drawingFinished();    // segnala è terminato il disegno
@@ -59,9 +60,12 @@ private:
     void postProcessingCurve();                                                   // tolgo i punti che non rispettano la crescita monotona in X.
     const double applyScale(const double pixels) const;                           // Converte un valore da pixel a metri basandosi sulla scala impostata
     const double getScaledPointsDistance(const QPointF &, const QPointF &) const; // calcola la distanza euclidea fra 2 punti
-    const double getSlopeAt() const;                                              // ritorna la pendenza del segmento corrente in cui si trova la pallina
+    const double getSlopeSineAt(const double) const;                              // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
     void computeCumulativeDistance();
     void updatePhysics();
+    void updateBallPosition(const double s);
+    const double clampDistance(const double) const;      // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
+    const int getSegmentIndex(const double) const; // ritorna l'indice del segmento rispetto alla distanza cumulativa
 
     // Attributi
     const std::string classTag = this->metaObject()->className(); // nome della classe
@@ -71,7 +75,8 @@ private:
     const double minMoveDistance = 5.0; // distanza minima fra un campione e l'altro (del disegno libero)
     const int margin = 40;              // margine dai bordi della scena
     const int ballRadius = 6;
-    const int deltaTime = 16; // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
+    const int deltaTimeMilliseconds = 16;  // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
+    const double deltaTimeSeconds = 0.016; // espresso in secondi
 
     double pixelsPerMeter = 100.0;
     bool showTarget = false;
@@ -83,10 +88,11 @@ private:
     QGraphicsEllipseItem *ballItem;
     QList<QPointF> points;
     bool isUserDrawing;
-    arma::vec state;                        // stato del sistema
+    arma::vec2 state;                       // stato del sistema
     QTimer *simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
     QElapsedTimer totalSimulationTime;      // misura la durata totale dell'intera simulazione
+    double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
 };
 

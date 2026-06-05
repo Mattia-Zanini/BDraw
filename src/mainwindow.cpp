@@ -88,23 +88,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(cycloidBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCycloid);
     connect(showTargetCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::drawRedDot);
 
-    connect(clearBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::clearScene);
-
     connect(clearBtn, &QPushButton::clicked, this,
             [=]
             {
                 simulationCanvas->clearScene();
                 timeLabel->setText("Tempo stimato: ---");
+                actualTimeLabel->setText("Tempo effettivo: ---");
             });
 
     connect(simulationCanvas, &SimulationCanvas::drawingFinished, this,
             [=]
             {
                 double time = simulationCanvas->computeTheoreticalTime();
+                actualTimeLabel->setText("Tempo effettivo: ---");
                 timeLabel->setText(QString("Tempo stimato: %1 s")
                                        .arg(time, 0, 'f', 3));
-                
+
                 simulationCanvas->startSimulation();
+            });
+
+    connect(simulationCanvas, &SimulationCanvas::simulationFinished, this,
+            [=]
+            {
+                double simTime = simulationCanvas->getSimulationTime();
+                actualTimeLabel->setText(QString("Tempo effettivo: %1 s")
+                                             .arg(simTime, 0, 'f', 3));
             });
 
     // infine imposto il widget centrale sulla MainWindow
