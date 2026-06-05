@@ -132,6 +132,10 @@ Il progetto è configurato per installare automaticamente tutte le dipendenze ne
 
 Di default, nei comandi seguenti viene configurata la modalità **Debug** per abilitare tutti i log di tracciamento. Se si desidera compilare in modalità **Release** (ottimizzata e senza log di debug), è sufficiente sostituire `-DCMAKE_BUILD_TYPE=Debug` con `-DCMAKE_BUILD_TYPE=Release` durante la configurazione (o specificare `--config Release` durante la build su Windows/MSVC).
 
+> [!NOTE]
+> La prima configurazione del progetto impiega circa **10 ~ 15 minuti**. Questo accade perché `vcpkg` deve scaricare e compilare da sorgente tutte le dipendenze esterne (Boost, Armadillo, spdlog, ecc.). Le build e configurazioni successive saranno molto più rapide.
+
+
 - **Su Linux (Ubuntu)** (usando Ninja per massimizzare le prestazioni di build):
   ```bash
   # 1. Configura il progetto in modalità Debug
