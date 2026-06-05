@@ -18,7 +18,7 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
 
 - **Linguaggio**: C++17 o superiore.
 - **Build System**: CMake 3.16+.
-- **Framework UI**: [Qt 6.10+](https://www.qt.io/) (consigliata l'ultima versione stabile).
+- **Framework UI**: [Qt 6.10+](https://www.qt.io/)
 - **Librerie esterne**:
   - [Armadillo](https://arma.sourceforge.net/) (per il calcolo numerico).
   - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
