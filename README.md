@@ -23,6 +23,7 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
   - [Armadillo](https://arma.sourceforge.net/) (per il calcolo numerico).
   - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
   - [Boost](https://www.boost.org/) (in particolare il modulo `boost-math` per funzioni speciali e costanti matematiche).
+  - [libassert](https://github.com/jeremy-rifkin/libassert) (per la gestione avanzata delle asserzioni).
 
 Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
 
