@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QCheckBox>
+#include <QSlider>
 
 #include <QVector>
 
@@ -46,17 +47,33 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     showTargetCb->setChecked(false);
     showTargetCb->setStyleSheet("font-size: 14px; color: #ffffff");
 
+    QCheckBox *showOptimalCb = new QCheckBox("Mostra Ottimo", leftPanel);
+    showOptimalCb->setChecked(false);
+    showOptimalCb->setStyleSheet("font-size: 14px; color: #ffffff");
+
     // stile default dei labels presenti nel pannello sinistro
     QString labelStyle = "font-size: 14px; color: #ffffff";
+
+    // slider e label dello zoom
+    QLabel *zoomLabel = new QLabel("Zoom: 100 px/m", leftPanel);
+    zoomLabel->setStyleSheet(labelStyle);
+
+    QSlider *zoomSlider = new QSlider(Qt::Horizontal, leftPanel);
+    zoomSlider->setRange(10, 100);
+    zoomSlider->setValue(100);
 
     // labels del pannello sinistro
     QLabel *pathLabel = new QLabel("Curve predefinite:", leftPanel);
     QLabel *timeLabel = new QLabel("Tempo stimato: ---", leftPanel);
     QLabel *actualTimeLabel = new QLabel("Tempo effettivo: ---", leftPanel);
+    QLabel *bestTimeLabel = new QLabel("Tempo migliore: ---", leftPanel);
+    QLabel *lengthLabel = new QLabel("Lunghezza: ---", leftPanel);
 
     pathLabel->setStyleSheet(labelStyle);
     timeLabel->setStyleSheet(labelStyle);
     actualTimeLabel->setStyleSheet(labelStyle);
+    bestTimeLabel->setStyleSheet(labelStyle);
+    lengthLabel->setStyleSheet(labelStyle);
 
     // imposto, in ordine, il pannello sinistro
     leftLayout->addWidget(pathLabel);
@@ -64,16 +81,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     leftLayout->addWidget(circleBtn);
     leftLayout->addWidget(cycloidBtn);
 
-    leftLayout->addSpacing(30);
+    leftLayout->addSpacing(15);
+    leftLayout->addWidget(zoomLabel);
+    leftLayout->addWidget(zoomSlider);
+    leftLayout->addWidget(lengthLabel);
+    leftLayout->addSpacing(15);
 
     leftLayout->addWidget(clearBtn);
     leftLayout->addWidget(repeatBtn);
     leftLayout->addWidget(showTargetCb);
+    leftLayout->addWidget(showOptimalCb);
 
     leftLayout->addSpacing(15);
 
     leftLayout->addWidget(timeLabel);
     leftLayout->addWidget(actualTimeLabel);
+    leftLayout->addSpacing(10);
+    leftLayout->addWidget(bestTimeLabel);
 
     // aggiungo uno spazio vuoto elastico, questo spingerà  in modo compatto tutti i tuoi pulsanti verso la parte superiore del pannello
     leftLayout->addStretch();
@@ -87,6 +111,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(circleBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCircle);
     connect(cycloidBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCycloid);
     connect(showTargetCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::drawRedDot);
+    connect(showOptimalCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::setShowOptimal);
+
+    connect(zoomSlider, &QSlider::valueChanged, this,
+            [=](int value)
+            {
+                zoomLabel->setText(QString("Zoom: %1 px/m").arg(value));
+                simulationCanvas->setMetersPerPixel(1.0 / value);
+
+                if (simulationCanvas->hasCurve())
+                {
+                    double length = simulationCanvas->getCurveLength();
+                    lengthLabel->setText(QString("Lunghezza: %1 m")
+                                             .arg(length, 0, 'f', 2));
+
+                    double time = simulationCanvas->computeTheoreticalTime();
+                    timeLabel->setText(QString("Tempo stimato: %1 s")
+                                           .arg(time, 0, 'f', 3));
+
+                    double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
+                    bestTimeLabel->setText(QString("Tempo migliore: %1 s")
+                                               .arg(bestTimeVal, 0, 'f', 3));
+                }
+            });
 
     connect(clearBtn, &QPushButton::clicked, this,
             [=]
@@ -94,6 +141,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 simulationCanvas->clearScene();
                 timeLabel->setText("Tempo stimato: ---");
                 actualTimeLabel->setText("Tempo effettivo: ---");
+                bestTimeLabel->setText("Tempo migliore: ---");
+                lengthLabel->setText("Lunghezza: ---");
             });
 
     connect(simulationCanvas, &SimulationCanvas::drawingFinished, this,
@@ -103,6 +152,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 actualTimeLabel->setText("Tempo effettivo: ---");
                 timeLabel->setText(QString("Tempo stimato: %1 s")
                                        .arg(time, 0, 'f', 3));
+
+                double length = simulationCanvas->getCurveLength();
+                lengthLabel->setText(QString("Lunghezza: %1 m")
+                                         .arg(length, 0, 'f', 2));
+
+                double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
+                bestTimeLabel->setText(QString("Tempo migliore: %1 s")
+                                           .arg(bestTimeVal, 0, 'f', 3));
 
                 simulationCanvas->startSimulation();
             });
