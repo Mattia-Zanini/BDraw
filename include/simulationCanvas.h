@@ -6,6 +6,7 @@
 #include <libassert/assert.hpp>
 #include <spdlog/spdlog.h>
 #include <armadillo>
+#include <exprtk.hpp>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/beta.hpp>
@@ -45,6 +46,7 @@ public:
     const double getCurveLength() const;                                                // ritorna la lunghezza totale della curva in metri
     const QPointF getEndPoint() const;                                                  // ritorna l'ultimo punto della curva corrente
     const double computeBestTheoreticalTime(const QPointF &target) const;               // calcola il tempo teorico della cicloide passante per il target
+    void drawCurveFromFormula(const QString &formulaStr);
 
 signals:
     void drawingFinished();    // segnala è terminato il disegno
@@ -60,20 +62,21 @@ private:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void drawBackground(QPainter *painter, const QRectF &rect) override;
+    void resizeEvent(QResizeEvent *event) override;
 
-    const QString pointToString(const QPointF &) const;                                     // converte un punto nel formato stringa "(x, y)" (DEBUG)
-    const QString pointsToString(const QList<QPointF> &) const;                             // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
-    void postProcessingCurve();                                                             // tolgo i punti che non rispettano la crescita monotona in X.
-    const double applyScale(const double) const;                                            // Converte un valore da pixel a metri basandosi sulla scala impostata
-    const double getScaledPointsDistance(const QPointF &p1, const QPointF &p2) const;       // calcola la distanza euclidea fra 2 punti
-    const double getSineAt(const double) const;                                             // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
-    void computeCumulativeDistance();                                                       // calcola le distanze cumulative dei segmenti della curva
-    QList<QPointF> generateCycloidPoints(const QPointF &target) const;                  // genera i punti di una cicloide che termina sul target
-    void updatePhysics();                                                                   // esegue l'integrazione numerica dello stato della pallina
-    void updateBallPosition(const double s);                                                // aggiorna la posizione grafica della pallina sulla curva
-    const double clampDistance(const double) const;                                         // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
-    const int getSegmentIndex(const double) const;                                          // ritorna l'indice del segmento rispetto alla distanza cumulativa
-    void updateOptimalCurve();                                                              // calcola e disegna la curva ottima se abilitata
+    const QString pointToString(const QPointF &) const;                               // converte un punto nel formato stringa "(x, y)" (DEBUG)
+    const QString pointsToString(const QList<QPointF> &) const;                       // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
+    void postProcessingCurve();                                                       // tolgo i punti che non rispettano la crescita monotona in X.
+    const double applyScale(const double) const;                                      // Converte un valore da pixel a metri basandosi sulla scala impostata
+    const double getScaledPointsDistance(const QPointF &p1, const QPointF &p2) const; // calcola la distanza euclidea fra 2 punti
+    const double getSineAt(const double) const;                                       // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
+    void computeCumulativeDistance();                                                 // calcola le distanze cumulative dei segmenti della curva
+    QList<QPointF> generateCycloidPoints(const QPointF &target) const;                // genera i punti di una cicloide che termina sul target
+    void updatePhysics();                                                             // esegue l'integrazione numerica dello stato della pallina
+    void updateBallPosition(const double s);                                          // aggiorna la posizione grafica della pallina sulla curva
+    const double clampDistance(const double) const;                                   // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
+    const int getSegmentIndex(const double) const;                                    // ritorna l'indice del segmento rispetto alla distanza cumulativa
+    void updateOptimalCurve();                                                        // calcola e disegna la curva ottima se abilitata
 
     // Attributi
     const std::string classTag = this->metaObject()->className(); // nome della classe
@@ -103,10 +106,11 @@ private:
     double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
     QList<QPointF> optimalCurve;
-    QGraphicsPathItem *optimalCurveItem = nullptr;
+    QGraphicsPathItem *optimalCurveItem;
     QPen bestPen;
-    bool showOptimal = false;
-    bool isCycloid = false;
+    bool showOptimal;
+    bool isCycloid;
+    int initWidth;
 };
 
 #endif // SIMULATIONCANVAS_H

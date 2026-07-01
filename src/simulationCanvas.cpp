@@ -44,6 +44,7 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
   metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
   simulationClock = new QTimer(this);
+  initWidth = 0; // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
   connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics); // connetto il clock all'update della simulazione
 
   spdlog::debug("{} SimulationCanvas inizializzato correttamente", logTag);
@@ -96,7 +97,7 @@ void SimulationCanvas::setShowOptimal(bool show)
 
 void SimulationCanvas::updateOptimalCurve()
 {
-  if (!showOptimal || points.isEmpty() || isCycloid)
+  if (!showOptimal || points.size() < 2 || isCycloid)
   {
     if (optimalCurveItem)
       optimalCurveItem->hide();
@@ -382,8 +383,6 @@ void SimulationCanvas::drawCircle()
       pointToString(points.back()).toStdString(),
       points.count());
 
-  spdlog::debug("{} points.toString()\n{}", logTag, pointsToString(points).toStdString());
-
   computeCumulativeDistance();
   isCycloid = false;
   updateOptimalCurve();
@@ -416,8 +415,6 @@ void SimulationCanvas::drawCycloid()
   updateOptimalCurve();
   emit drawingFinished();
 }
-
-
 
 // GESTIONE DEL CLICK
 void SimulationCanvas::mousePressEvent(QMouseEvent *event)
@@ -490,12 +487,19 @@ void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
   QGraphicsView::mouseReleaseEvent(event);
 }
 
+void SimulationCanvas::resizeEvent(QResizeEvent *event)
+{
+  QGraphicsView::resizeEvent(event);
+  if (initWidth == 0 && viewport()->width() > 0)
+    initWidth = viewport()->width();
+}
+
 void SimulationCanvas::postProcessingCurve()
 {
   if (points.size() < 2) // non serve processare 1 punto solo (o 0)
     return;
 
-  spdlog::debug("{} PRE: sono presenti {} punti", logTag, points.size());
+  spdlog::debug("{} prima del processing sono presenti {} punti", logTag, points.size());
   QList<QPointF> processedPoints;
   processedPoints.append(points.first());
 
@@ -509,6 +513,13 @@ void SimulationCanvas::postProcessingCurve()
     }
   }
   points = processedPoints;
+
+  if (points.size() < 2)
+  {
+    spdlog::warn("{} La curva processata non ha punti validi (es. fuori dominio), cancello la scena", logTag);
+    clearScene();
+    return;
+  }
 
   redrawCurve(points);
   spdlog::debug("{} Curva processata, ora sono presenti {} punti", logTag, points.size());
@@ -604,7 +615,7 @@ void SimulationCanvas::startSimulation()
   totSimulationSeconds = 0.0;
   double curveTotalLength = cumulativeDistance.back();
 
-  spdlog::debug("{} punti della curva\n{}", logTag, pointsToString(points).toStdString());
+  // spdlog::debug("{} punti della curva\n{}", logTag, pointsToString(points).toStdString());
 
   // avvio i timer e il clock
   simulationClock->start(deltaTimeMilliseconds);
@@ -624,10 +635,20 @@ void SimulationCanvas::updatePhysics()
   arma::mat A = {{1.0, dt},
                  {0.0, 1}};
   arma::vec2 B = {0.0, dt * sine}; // B = [ 0, dt * seno ]^T
-  double u = gravity; // vettore d'ingresso u(k) = g
+  double u = gravity;              // vettore d'ingresso u(k) = g
 
   // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
   state = A * state + B * u;
+
+  // se la pallina torna indietro oltre l'inizio della curva termino la simulazione
+  if (state(0) < -0.01)
+  {
+    spdlog::warn("{} La pallina è tornata indietro oltre l'inizio della curva, termino la simulazione", logTag);
+    simulationClock->stop();
+    totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
+    emit simulationFinished();
+    return;
+  }
 
   state(0) = clampDistance(state(0));
   spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
@@ -637,7 +658,7 @@ void SimulationCanvas::updatePhysics()
 
   updateBallPosition(s);
 
-  if (s == L) // fine della simulazione
+  if (s == L) // fine della simulazione (ha raggiunto il fondo)
   {
     simulationClock->stop();
     totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
@@ -676,4 +697,66 @@ void SimulationCanvas::updateBallPosition(const double s)
   double percent = curve.percentAtLength(s / metersPerPixel);
   QPointF pos = curve.pointAtPercent(percent); // ottengo la posizione (x,y) della pallina sulla curva (senza offset)
   ballItem->setPos(pos.x() + offsetX - ballRadius, pos.y() + offsetY - ballRadius);
+}
+
+void SimulationCanvas::drawCurveFromFormula(const QString &formulaStr)
+{
+  clearScene();
+
+  // ottengo l'espressione matematica
+  std::string expression_string = formulaStr.toStdString();
+  double x = 0.0;
+
+  // configura la tabella dei simboli (associa la variabile "x" del testo alla variabile C++)
+  exprtk::symbol_table<double> symbol_table;
+  symbol_table.add_variable("x", x);
+  symbol_table.add_constants();
+
+  // registra la tabella nell'espressione
+  exprtk::expression<double> expression;
+  expression.register_symbol_table(symbol_table);
+
+  // eseguo il parsing della stringa
+  exprtk::parser<double> parser;
+  if (!parser.compile(expression_string, expression))
+  {
+    spdlog::error("{} Errore nel parsing della formula: {}", logTag, parser.error());
+    return;
+  }
+
+  // genero i punti campionando lungo l'asse X del viewport
+  int numPoints = 250 * ((double)viewport()->width() / initWidth); // aumento i punti in modo lineare alla dimensione della finestra
+  spdlog::debug("{} initWidth: {}", logTag, initWidth);
+
+  double targetX = viewport()->width() - margin;
+  double dx = targetX / numPoints;
+
+  // limite di sicurezza: permetto alla curva di sforare l'altezza del canvas, ma non all'infinito
+  double limitY = viewport()->height() * 3.0;
+
+  points.reserve(numPoints + 1);
+  for (int i = 0; i <= numPoints; ++i)
+  {
+    x = i * dx;                    // aggiorno la variabile legata al parser
+    double y = expression.value(); // valuto la formula per la x corrente
+
+    // ignoro eventuali valori non numerici (NaN) o infiniti
+    if (std::isnan(y) || std::isinf(y))
+      continue;
+
+    // se la curva "sfora" oltre il limite di sicurezza, blocco la generazione
+    if (y > limitY || y < -limitY)
+      break;
+
+    points.append(QPointF(x, y));
+  }
+
+  redrawCurve(points);
+  postProcessingCurve();
+  computeCumulativeDistance();
+  updateOptimalCurve();
+
+  spdlog::info("{} Curva generata da equazione con {} punti", logTag, points.count());
+
+  emit drawingFinished();
 }

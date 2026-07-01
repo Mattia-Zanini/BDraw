@@ -25,6 +25,9 @@ public:
 private:
     const std::string TAG = this->metaObject()->className(); // nome della classe
     const std::string stdTAG = "[" + TAG + "]";
+    const int initWindowWidth = 854;
+    const int initWindowHeigth = 680;
+    const int controlPanelWidth = 220;
 
     Ui::MainWindow *ui;
 };

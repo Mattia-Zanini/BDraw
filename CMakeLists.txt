@@ -47,6 +47,7 @@ set(PROJECT_SOURCES
     src/simulationCanvas.cpp
     include/mainwindow.h
     include/simulationCanvas.h
+    include/exprtk.hpp
     mainwindow.ui
     ${TS_FILES}
 )

@@ -24,8 +24,19 @@ Il progetto è sviluppato in **C++** e richiede i seguenti componenti per la com
   - [spdlog](https://github.com/gabime/spdlog) (per il logging di sistema).
   - [Boost](https://www.boost.org/) (in particolare il modulo `boost-math` per funzioni speciali e costanti matematiche).
   - [libassert](https://github.com/jeremy-rifkin/libassert) (per la gestione avanzata delle asserzioni).
+  - [exprtk](https://github.com/ArashPartow/exprtk) (già inclusa nel progetto come libreria header-only, non è necessario scaricarla).
 
 Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
+
+## Formule Consigliate da Testare
+
+È possibile inserire formule matematiche personalizzate per disegnare la pista della simulazione. L'asse Y cresce verso il basso (nel verso della gravità). Ecco alcune curve interessanti da testare:
+
+- `sin(x / 30) * 50 + x / 2` (Le Montagne Russe)
+- `-abs(x - 300) + 300` (La rampa da Skate)
+- `sqrt(x) * 15` (Lo scivolo ad acqua)
+- `x / 2 + sin(x / 15) * 15` (I Gradini morbidi)
+- `exp(x / 110) - 1` (Il burrone)
 
 ## Compilazione e Sviluppo
 

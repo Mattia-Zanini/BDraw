@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QCheckBox>
 #include <QSlider>
+#include <QLineEdit>
 
 #include <QVector>
 
@@ -17,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
     ui->setupUi(this);
 
-    setMinimumSize(640, 480); // Imposto la grandezza minima della finestra
+    setMinimumSize(initWindowWidth, initWindowHeigth); // Imposto la grandezza minima della finestra
 
     // creo il widget centrale e il layout orizzontale principale
     QWidget *centralWidget = new QWidget(this);
@@ -28,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
 
     // imposto i limiti di larghezza per il pannello sinistro
-    leftPanel->setFixedWidth(180);
+    leftPanel->setFixedWidth(controlPanelWidth);
 
     // creo il pannello destro per la scena grafica
     SimulationCanvas *simulationCanvas = new SimulationCanvas(centralWidget); // rightPanel
@@ -69,6 +70,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QLabel *bestTimeLabel = new QLabel("Tempo migliore: ---", leftPanel);
     QLabel *lengthLabel = new QLabel("Lunghezza: ---", leftPanel);
 
+    QLabel *formulaLabel = new QLabel("Disegna da formula:", leftPanel);
+    QLineEdit *formulaInput = new QLineEdit(leftPanel);
+    formulaInput->setPlaceholderText("Es. 2x");
+    formulaInput->setStyleSheet("padding: 5px; font-size: 14px;");
+
     pathLabel->setStyleSheet(labelStyle);
     timeLabel->setStyleSheet(labelStyle);
     actualTimeLabel->setStyleSheet(labelStyle);
@@ -98,6 +104,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     leftLayout->addWidget(actualTimeLabel);
     leftLayout->addSpacing(10);
     leftLayout->addWidget(bestTimeLabel);
+
+    leftLayout->addSpacing(15);
+    formulaLabel->setStyleSheet(labelStyle);
+    leftLayout->addWidget(formulaLabel);
+    leftLayout->addWidget(formulaInput);
+
+    connect(formulaInput, &QLineEdit::returnPressed,
+            [this, simulationCanvas, formulaInput]()
+            {
+                if (!formulaInput->text().trimmed().isEmpty())
+                    simulationCanvas->drawCurveFromFormula(formulaInput->text());
+            });
 
     // aggiungo uno spazio vuoto elastico, questo spingerà  in modo compatto tutti i tuoi pulsanti verso la parte superiore del pannello
     leftLayout->addStretch();
