@@ -44,7 +44,7 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
   metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
   simulationClock = new QTimer(this);
-  initWidth = 0; // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
+  initWidth = 0;                                                                      // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
   connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics); // connetto il clock all'update della simulazione
 
   spdlog::debug("{} SimulationCanvas inizializzato correttamente", logTag);
@@ -534,10 +534,10 @@ const double SimulationCanvas::computeTheoreticalTime(const QList<QPointF> &cust
     return 0.0;
 
   double yStart = applyScale(pts[0].y());
+  double v1 = 0.0; // la velocità iniziale al primo punto è sempre 0.0
 
   for (int i = 0; i < pts.count() - 1; i++)
   {
-    double y1 = applyScale(pts[i].y());
     double y2 = applyScale(pts[i + 1].y());
 
     // pitagora
@@ -545,28 +545,16 @@ const double SimulationCanvas::computeTheoreticalTime(const QList<QPointF> &cust
 
     // VELOCITA': sqrt(2 * g * Δy), dalla conservazione dell'energia
     // il max, serve per proteggere i calcoli in caso di valori negativi
-    double v1 = std::sqrt(std::max(0.0, 2.0 * gravity * (y1 - yStart))); // sqrt[2g(y1 - 0)] = ⎷(2g*y1)
-    double v2 = std::sqrt(std::max(0.0, 2.0 * gravity * (y2 - yStart))); // sqrt(2g*y2)
+    double v2 = std::sqrt(std::max(0.0, 2.0 * gravity * (y2 - yStart)));
 
-    // v1: la velocità con cui la pallina entra in quel segmento (basata su quanto è scesa dall'inizio fino al punto 1)
-    // v2: la velocità con cui la pallina esce da quel segmento (basata su quanto è scesa dall'inizio fino al punto 2)
+    // v1: velocità in ingresso (ereditata dal ciclo precedente)
+    // v2: velocità in uscita (calcolata ora)
 
-    // siccome il segmento è una linea retta, la pallina ha aumentato la sua velocità in modo perfettamente regolare
-    double vMedia = (v1 + v2) / 2.0;
+    // tempo = distanza / velocità media => d / ((v1 + v2) / 2) => 2d / (v1 + v2)
+    totalTime += (2.0 * d) / (v1 + v2);
 
-    // l'if serve per evitare divisioni per 0 o per valori impercettibili
-    if ((v1 + v2) > threshold)
-      totalTime += d / vMedia; // tempo = distanza / velocità
-    else
-    {
-      // se il programma entra in questo else, significa una cosa sola: sono all'inizio del percorso e la pallina
-      // sta partendo da ferma. Non posso usare la velocità per calcolare il tempo (perché non ce n'è ancora!)
-
-      double dy = y2 - y1;
-      if (dy > threshold) // se non rispetta l'if allora sto aggiungendo 0.0 al tempo
-        // è la soluzione cinematica esatta per un corpo che scivola su un piano inclinato partendo da fermo
-        totalTime += std::sqrt(2.0 * (d * d) / (gravity * dy));
-    }
+    // La velocità in uscita di questo segmento sarà la velocità in ingresso del prossimo
+    v1 = v2;
   }
 
   spdlog::debug("{} Calcolato il tempo teorico (scala 1:{}): {} s", logTag, metersPerPixel, totalTime);
