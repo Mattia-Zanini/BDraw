@@ -29,8 +29,10 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
 
   // init delle variabili
   isUserDrawing = false;
-  pen = QPen(Qt::cyan, 2);
-  bestPen = QPen(QColor(0, 255, 0), 2);
+  pen = QPen(Qt::blue);
+  pen.setWidthF(2.5);
+  bestPen = QPen(QColor(0, 152, 13));
+  bestPen.setWidthF(2.5);
   state = arma::vec2(arma::fill::zeros);
   curveItem = nullptr;
   optimalCurveItem = nullptr;
@@ -504,9 +506,10 @@ void SimulationCanvas::postProcessingCurve()
   processedPoints.append(points.first());
 
   qreal min = 0;
+  qreal xMaxValue = viewport()->width() - threshold;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() >= min && points[i].y() >= threshold)
+    if (points[i].x() >= min && points[i].y() >= threshold && points[i].x() <= xMaxValue)
     {
       processedPoints.append(points[i]);
       min = points[i].x();

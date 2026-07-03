@@ -11,14 +11,26 @@
 #include <QCheckBox>
 #include <QSlider>
 #include <QLineEdit>
-
 #include <QVector>
+#include <QStyleHints>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
     setMinimumSize(initWindowWidth, initWindowHeigth); // Imposto la grandezza minima della finestra
+
+    // ottengo il tema del sistema
+    Qt::ColorScheme theme = QGuiApplication::styleHints()->colorScheme();
+    QString fontColor = QString("#000000"); // default -> tema chiaro
+    if (theme == Qt::ColorScheme::Dark)
+    {
+        // Tema scuro
+        spdlog::info("Il sistema sta usando il tema: SCURO");
+        fontColor = "#FFFFFF";
+    }
+    else // Tema chiaro
+        spdlog::info("Il sistema sta usando il tema: CHIARO");
 
     // creo il widget centrale e il layout orizzontale principale
     QWidget *centralWidget = new QWidget(this);
@@ -44,16 +56,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QPushButton *cycloidBtn = new QPushButton("Cicloide", leftPanel);
 
     // checkbox per mostrare/nascondere il punto target
-    QCheckBox *showTargetCb = new QCheckBox("Mostra Target", leftPanel);
-    showTargetCb->setChecked(false);
-    showTargetCb->setStyleSheet("font-size: 14px; color: #ffffff");
+    QCheckBox *showTargetCheckbox = new QCheckBox("Mostra Target", leftPanel);
+    showTargetCheckbox->setChecked(false);
 
-    QCheckBox *showOptimalCb = new QCheckBox("Mostra Ottimo", leftPanel);
-    showOptimalCb->setChecked(false);
-    showOptimalCb->setStyleSheet("font-size: 14px; color: #ffffff");
+    QCheckBox *showOptimalCheckbox = new QCheckBox("Mostra Ottimo", leftPanel);
+    showOptimalCheckbox->setChecked(false);
 
     // stile default dei labels presenti nel pannello sinistro
-    QString labelStyle = "font-size: 14px; color: #ffffff";
+    QString labelStyle = "font-size: 14px; color: " + fontColor;
 
     // slider e label dello zoom
     QLabel *zoomLabel = new QLabel("Zoom: 100 px/m", leftPanel);
@@ -95,8 +105,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     leftLayout->addWidget(clearBtn);
     leftLayout->addWidget(repeatBtn);
-    leftLayout->addWidget(showTargetCb);
-    leftLayout->addWidget(showOptimalCb);
+    leftLayout->addWidget(showTargetCheckbox);
+    showTargetCheckbox->setStyleSheet(labelStyle);
+    leftLayout->addWidget(showOptimalCheckbox);
+    showOptimalCheckbox->setStyleSheet(labelStyle);
 
     leftLayout->addSpacing(15);
 
@@ -128,8 +140,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(lineBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawLine);
     connect(circleBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCircle);
     connect(cycloidBtn, &QPushButton::clicked, simulationCanvas, &SimulationCanvas::drawCycloid);
-    connect(showTargetCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::drawRedDot);
-    connect(showOptimalCb, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::setShowOptimal);
+    connect(showTargetCheckbox, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::drawRedDot);
+    connect(showOptimalCheckbox, &QCheckBox::toggled, simulationCanvas, &SimulationCanvas::setShowOptimal);
 
     connect(zoomSlider, &QSlider::valueChanged, this,
             [=](int value)
