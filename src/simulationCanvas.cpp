@@ -68,7 +68,7 @@ void SimulationCanvas::setMetersPerPixel(double val)
 
 bool SimulationCanvas::hasCurve() const
 {
-  return !points.isEmpty();
+  return points.count() >= 2;
 }
 
 const double SimulationCanvas::getCurveLength() const
@@ -87,6 +87,9 @@ const QPointF SimulationCanvas::getEndPoint() const
 
 const double SimulationCanvas::computeBestTheoreticalTime(const QPointF &target) const
 {
+  if (isCycloid)
+    return computeTheoreticalTime(points);
+
   return computeTheoreticalTime(generateCycloidPoints(target));
 }
 
@@ -107,7 +110,7 @@ void SimulationCanvas::updateOptimalCurve()
   }
 
   QPointF target = getEndPoint();
-  optimalCurve = generateCycloidPoints(target);
+  optimalCurve = generateCycloidPoints(target, points.first());
 
   QPainterPath optimalPath;
   if (!optimalCurve.isEmpty())
@@ -129,18 +132,24 @@ void SimulationCanvas::updateOptimalCurve()
   }
 }
 
-QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target) const
+QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, const QPointF &startPoint) const
 {
-  DEBUG_ASSERT(target.x() >= 0.0 && target.y() >= 0.0, "Le coordinate del target della cicloide non possono essere negative", target.x(), target.y());
+  QPointF relativeTarget = target - startPoint;
+  DEBUG_ASSERT(relativeTarget.x() >= 0.0 && relativeTarget.y() >= 0.0,
+               "Le coordinate del relative-target della cicloide non possono essere negative",
+               "target = " + pointToString(target).toStdString(),
+               "startPoint = " + pointToString(startPoint).toStdString(),
+               "relativeTarget = " + pointToString(relativeTarget).toStdString());
   QList<QPointF> cycloidPoints;
 
-  double A = target.x();
-  double B = target.y();
+  double A = relativeTarget.x();
+  double B = relativeTarget.y();
 
   double tau = 0.0;
   double c = 0.0;
 
   // (STEP 1) GESTIONE DEL CASO LIMITE
+  // Se B è circa 0, la formula della bisezione esplode (A/B), in questo caso: tau = 2*PI e c = A / (2*PI)
   if (B < threshold)
   {
     tau = boost::math::constants::two_pi<double>();
@@ -151,21 +160,32 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target) co
     // (STEP 2) CASO GENERALE: risoluzione numerica con TOMS748
     double q = A / B;
 
+    // funzione f da azzerare:
+    // phi(t) = ( t - sin(t) ) / ( 1 - cos(t) )
+    // f(t) = phi(t) - q
     auto f = [q](double t) -> double
     {
+      // dovrò risolvere l'equazione f(t) = 0 -> phi(t) - q = 0
       return (t - std::sin(t)) / (1.0 - std::cos(t)) - q;
     };
 
+    // range di ricerca: sto strettamente dentro (0, 2*PI) per evitare le divisioni per 0 agli estremi
     double left = threshold;
     double right = boost::math::constants::two_pi<double>() - threshold;
 
+    // imposto la precisione numerica
     boost::math::tools::eps_tolerance<double> tolerance(std::numeric_limits<double>::digits);
     std::uintmax_t maxIteration = 50;
 
     try
     {
+      // eseguo TOMS748
       std::pair<double, double> result = boost::math::tools::toms748_solve(f, left, right, tolerance, maxIteration);
+
+      // estraggo tau come punto medio del minuscolo intervallo risultante
       tau = (result.first + result.second) / 2.0;
+
+      // ottenuto tau, ricavo c dalla seconda equazione parametrica
       c = B / (1.0 - std::cos(tau));
     }
     catch (const std::exception &e)
@@ -178,17 +198,23 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target) co
   // (STEP 3) GENERAZIONE DEI PUNTI DELLA CURVA
   int numPoints = 50;
   cycloidPoints.reserve(numPoints);
-  cycloidPoints.append(QPointF(0.0, 0.0));
+  cycloidPoints.append(startPoint);
 
   for (double i = 1.0; i <= numPoints; i += 1)
   {
     double t_i = (i / numPoints) * tau;
-    double x = c * (t_i - std::sin(t_i));
-    double y = c * (1.0 - std::cos(t_i));
+    double x = c * (t_i - std::sin(t_i)) + startPoint.x();
+    double y = c * (1.0 - std::cos(t_i)) + startPoint.y();
     cycloidPoints.append(QPointF(x, y));
   }
 
-  cycloidPoints.last() = QPointF(A, B);
+  // correzione del punto finale
+  cycloidPoints.last() = target;
+
+  spdlog::info(
+      "{} Generata CICLOIDE con tau = {} , c = {} , inizio = {} , fine = {}",
+      logTag, tau, c, pointToString(cycloidPoints.first()).toStdString(), pointToString(cycloidPoints.last()).toStdString());
+
   return cycloidPoints;
 }
 
