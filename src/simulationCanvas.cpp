@@ -59,7 +59,8 @@ void SimulationCanvas::setMetersPerPixel(double val)
   DEBUG_ASSERT(val > 0.0, "Il fattore di scala metersPerPixel deve essere strettamente positivo", val);
   metersPerPixel = val;
   spdlog::debug("{} metersPerPixel impostato a: {} ({} px/m)", logTag, val, 1.0 / val);
-  if (!points.isEmpty())
+
+  if (hasCurve())
   {
     cumulativeDistance.clear();
     computeCumulativeDistance();
@@ -90,7 +91,17 @@ const double SimulationCanvas::computeBestTheoreticalTime(const QPointF &target)
   if (isCycloid)
     return computeTheoreticalTime(points);
 
-  return computeTheoreticalTime(generateCycloidPoints(target));
+  if (hasCurve() == false)
+    return 0.0;
+
+  // genero la cicloide ottimale a partire dal reale punto iniziale del tracciato disegnato
+  QList<QPointF> bestCurve = generateCycloidPoints(target, points.first());
+
+  // se la cicloide non può essere generata (es. target più in alto dell'inizio), il tempo teorico ottimale è infinito
+  if (bestCurve.isEmpty())
+    return std::numeric_limits<double>::infinity();
+
+  return computeTheoreticalTime(bestCurve);
 }
 
 void SimulationCanvas::setShowOptimal(bool show)
@@ -102,7 +113,7 @@ void SimulationCanvas::setShowOptimal(bool show)
 
 void SimulationCanvas::updateOptimalCurve()
 {
-  if (!showOptimal || points.size() < 2 || isCycloid)
+  if (!showOptimal || hasCurve() == false || isCycloid)
   {
     if (optimalCurveItem)
       optimalCurveItem->hide();
@@ -112,13 +123,18 @@ void SimulationCanvas::updateOptimalCurve()
   QPointF target = getEndPoint();
   optimalCurve = generateCycloidPoints(target, points.first());
 
-  QPainterPath optimalPath;
-  if (!optimalCurve.isEmpty())
+  // se la cicloide ottimale è vuota (caso fisicamente impossibile), nascondo il tracciato grafico
+  if (optimalCurve.isEmpty())
   {
-    optimalPath.moveTo(optimalCurve.first());
-    for (int i = 1; i < optimalCurve.size(); ++i)
-      optimalPath.lineTo(optimalCurve[i]);
+    if (optimalCurveItem)
+      optimalCurveItem->hide();
+    return;
   }
+
+  QPainterPath optimalPath;
+  optimalPath.moveTo(optimalCurve.first());
+  for (int i = 1; i < optimalCurve.size(); ++i)
+    optimalPath.lineTo(optimalCurve[i]);
 
   if (optimalCurveItem)
   {
@@ -135,12 +151,18 @@ void SimulationCanvas::updateOptimalCurve()
 QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, const QPointF &startPoint) const
 {
   QPointF relativeTarget = target - startPoint;
-  DEBUG_ASSERT(relativeTarget.x() >= 0.0 && relativeTarget.y() >= 0.0,
-               "Le coordinate del relative-target della cicloide non possono essere negative",
-               "target = " + pointToString(target).toStdString(),
-               "startPoint = " + pointToString(startPoint).toStdString(),
-               "relativeTarget = " + pointToString(relativeTarget).toStdString());
   QList<QPointF> cycloidPoints;
+
+  // CONTROLLO DI FATTIBILITA' FISICA:
+  // se il target è a sinistra (relativeTarget.x < 0) o più in alto rispetto al punto di partenza (relativeTarget.y < 0,
+  // ricordando che l'asse Y cresce verso il basso), una pallina che parte da ferma non può raggiungere il target per sola gravità.
+  // In questi casi non è possibile calcolare una curva brachistocrona valida.
+  if (relativeTarget.x() < 0.0 || relativeTarget.y() < 0.0)
+  {
+    spdlog::warn("{} Impossibile generare la cicloide: il target è più in alto del punto di partenza o a sinistra (x_diff = {}, y_diff = {})",
+                 logTag, relativeTarget.x(), relativeTarget.y());
+    return cycloidPoints;
+  }
 
   double A = relativeTarget.x();
   double B = relativeTarget.y();
