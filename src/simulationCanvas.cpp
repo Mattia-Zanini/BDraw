@@ -46,8 +46,10 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
   metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
   simulationClock = new QTimer(this);
-  initWidth = 0;                                                                      // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
-  connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics); // connetto il clock all'update della simulazione
+  initWidth = 0; // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
+
+  // connetto il clock all'update della simulazione
+  connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics);
 
   spdlog::debug("{} SimulationCanvas inizializzato correttamente", logTag);
 }
