@@ -83,11 +83,12 @@ private:
     const std::string logTag = "[" + classTag + "]";
     const double gravity = 9.81;
     const double threshold = 1e-6;      // soglia minima per le operazioni
-    const double minMoveDistance = 5.0; // distanza minima fra un campione e l'altro (del disegno libero)
+    const double minMoveDistance = 1.0; // distanza minima fra un campione e l'altro (del disegno libero)
     const int margin = 40;              // margine dai bordi della scena
     const int ballRadius = 6;
     const int deltaTimeMilliseconds = 16;  // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
     const double deltaTimeSeconds = 0.016; // espresso in secondi
+    const double maxTimeElapsed = 0.05; // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
 
     bool showTarget = false;
 

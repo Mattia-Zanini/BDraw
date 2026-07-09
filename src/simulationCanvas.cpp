@@ -668,8 +668,8 @@ void SimulationCanvas::updatePhysics()
 {
   double dt = elapsedTime.restart() / 1000.0; // calcolo del delta-time reale, in secondi
 
-  // protezione contro lag improvvisi del sistema ( > 50 ms )
-  if (dt > 0.05) // persi più di 3 frame
+  // protezione contro lag improvvisi del sistema
+  if (dt > maxTimeElapsed)
     dt = deltaTimeSeconds;
 
   double sine = getSineAt(clampDistance(state(0))); // sin(s(k))
