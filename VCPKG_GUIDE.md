@@ -17,7 +17,7 @@ Prima di iniziare, assicurati di avere installato gli strumenti di build richies
 
 * **Su macOS (via Homebrew)**:
   ```bash
-  brew install autoconf autoconf-archive automake libtool
+  brew install autoconf autoconf-archive automake libtool pkg-config ninja
   ```
 * **Su Linux (Ubuntu/Debian)**:
   ```bash

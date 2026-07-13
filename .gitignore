@@ -104,6 +104,7 @@ build/
 bin/
 files_md/
 .vscode/
+vcpkg_installed/
 
 ### LaTeX ###
 LaTeX\ Tesi/*.aux
