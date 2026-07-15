@@ -40,7 +40,8 @@ public:
     void drawCircle();                                                                  // disegna un arco di circonferenza
     const double computeTheoreticalTime(const QList<QPointF>& customPoints = {}) const; // calcola il tempo teorico di una curva
     void startSimulation();                                                             // avvia la simulazione e l'animazione
-    const double getSimulationTime() const;                                             // ritorna il tempo reale impiegato dall'ultima simulazione
+    const double getSimulationTime() const;                                             // ritorna il tempo reale impiegato dalla pallina principale
+    const double getOptimalSimulationTime() const;                                      // ritorna il tempo reale impiegato dalla pallina ottima
     void setMetersPerPixel(double val);                                                 // imposta la scala di conversione pixel/metri
     bool hasCurve() const;                                                              // controlla se è presente almeno una curva disegnata
     const double getCurveLength() const;                                                // ritorna la lunghezza totale della curva in metri
@@ -110,6 +111,8 @@ private:
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
     QElapsedTimer totalSimulationTime;      // misura la durata totale dell'intera simulazione
     double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
+    double mainSimulationSeconds;           // tempo impiegato dalla pallina principale
+    double optimalSimulationSeconds;        // tempo impiegato dalla pallina ottima
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
     std::vector<double> cumulativeDistanceOptimal;
     QList<QPointF> optimalCurve;

@@ -78,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QLabel *timeLabel = new QLabel("Tempo stimato: ---", leftPanel);
     QLabel *actualTimeLabel = new QLabel("Tempo effettivo: ---", leftPanel);
     QLabel *bestTimeLabel = new QLabel("Tempo migliore: ---", leftPanel);
+    QLabel *bestActualTimeLabel = new QLabel("Ottimo effettivo: ---", leftPanel);
     QLabel *lengthLabel = new QLabel("Lunghezza: ---", leftPanel);
 
     QLabel *formulaLabel = new QLabel("Disegna da formula:", leftPanel);
@@ -89,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     timeLabel->setStyleSheet(labelStyle);
     actualTimeLabel->setStyleSheet(labelStyle);
     bestTimeLabel->setStyleSheet(labelStyle);
+    bestActualTimeLabel->setStyleSheet(labelStyle);
     lengthLabel->setStyleSheet(labelStyle);
 
     // imposto, in ordine, il pannello sinistro
@@ -116,6 +118,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     leftLayout->addWidget(actualTimeLabel);
     leftLayout->addSpacing(10);
     leftLayout->addWidget(bestTimeLabel);
+    leftLayout->addWidget(bestActualTimeLabel);
 
     leftLayout->addSpacing(15);
     formulaLabel->setStyleSheet(labelStyle);
@@ -172,6 +175,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 timeLabel->setText("Tempo stimato: ---");
                 actualTimeLabel->setText("Tempo effettivo: ---");
                 bestTimeLabel->setText("Tempo migliore: ---");
+                bestActualTimeLabel->setText("Ottimo effettivo: ---");
                 lengthLabel->setText("Lunghezza: ---");
             });
 
@@ -180,6 +184,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             {
                 double time = simulationCanvas->computeTheoreticalTime();
                 actualTimeLabel->setText("Tempo effettivo: ---");
+                bestActualTimeLabel->setText("Ottimo effettivo: ---");
                 timeLabel->setText(QString("Tempo stimato: %1 s")
                                        .arg(time, 0, 'f', 3));
 
@@ -198,6 +203,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
             [=]
             {
                 actualTimeLabel->setText("Tempo effettivo: ---");
+                bestActualTimeLabel->setText("Ottimo effettivo: ---");
                 simulationCanvas->startSimulation();
             });
 
@@ -207,6 +213,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 double simTime = simulationCanvas->getSimulationTime();
                 actualTimeLabel->setText(QString("Tempo effettivo: %1 s")
                                              .arg(simTime, 0, 'f', 3));
+                                             
+                double optSimTime = simulationCanvas->getOptimalSimulationTime();
+                if (optSimTime > 0.0) {
+                    bestActualTimeLabel->setText(QString("Ottimo effettivo: %1 s")
+                                                 .arg(optSimTime, 0, 'f', 3));
+                } else {
+                    bestActualTimeLabel->setText("Ottimo effettivo: ---");
+                }
             });
 
     // infine imposto il widget centrale sulla MainWindow

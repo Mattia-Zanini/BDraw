@@ -63,7 +63,9 @@ SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent)
   spdlog::debug("{} SimulationCanvas inizializzato correttamente", logTag);
 }
 
-const double SimulationCanvas::getSimulationTime() const { return totSimulationSeconds; }
+const double SimulationCanvas::getSimulationTime() const { return mainSimulationSeconds; }
+
+const double SimulationCanvas::getOptimalSimulationTime() const { return optimalSimulationSeconds; }
 
 void SimulationCanvas::setMetersPerPixel(double val)
 {
@@ -282,8 +284,11 @@ void SimulationCanvas::clearScene()
   isCycloid = false;
   simulationClock->stop();
   totSimulationSeconds = 0.0;
+  mainSimulationSeconds = 0.0;
+  optimalSimulationSeconds = 0.0;
   cumulativeDistance.clear();
   cumulativeDistanceOptimal.clear();
+
   scene->removeItem(ballItem); // tolgo la pallina dalla scena senza distruggerla
   scene->removeItem(ballOptimal);
   scene->clear();              // cancello in sicurezza tutti gli altri elementi
@@ -291,6 +296,7 @@ void SimulationCanvas::clearScene()
   scene->addItem(ballOptimal);
   ballItem->hide();
   ballOptimal->hide();
+
   curveItem = nullptr;
   optimalCurveItem = nullptr;
   spdlog::debug("{} Scena pulita", logTag);
@@ -667,8 +673,12 @@ void SimulationCanvas::startSimulation()
   stateOptimal.zeros();
   updateBallPosition(0.0, ballItem, curve, points, cumulativeDistance);
   updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+  optimalBallFinished = false;
+  mainBallFinished = false;
   ballItem->show();
   totSimulationSeconds = 0.0;
+  mainSimulationSeconds = 0.0;
+  optimalSimulationSeconds = 0.0;
   double curveTotalLength = cumulativeDistance.back();
 
   // spdlog::debug("{} punti della curva\n{}", logTag, pointsToString(points).toStdString());
@@ -722,24 +732,33 @@ void SimulationCanvas::updatePhysics()
     spdlog::warn("{} Una delle palline è tornata indietro oltre l'inizio della curva, termino la simulazione", logTag);
     simulationClock->stop();
     totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
+    mainSimulationSeconds = totSimulationSeconds;
+    optimalSimulationSeconds = totSimulationSeconds;
     emit simulationFinished();
     return;
   }
 
   state(0) = clampDistance(state(0), cumulativeDistance);
+  double s = state(0);
+  double L = cumulativeDistance.back();
+  updateBallPosition(s, ballItem, curve, points, cumulativeDistance);
+
   stateOptimal(0) = clampDistance(stateOptimal(0), cumulativeDistanceOptimal);
+  double sOpt = stateOptimal(0);
+  double LOpt = cumulativeDistanceOptimal.back();
+  updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+
   spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
   spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
-  double s = state(0);
-  double sOpt = stateOptimal(0);
-  double L = cumulativeDistance.back();
-  double LOpt = cumulativeDistanceOptimal.back();
-
-  updateBallPosition(s, ballItem, curve, points, cumulativeDistance);
-  updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
 
   mainBallFinished = (s == L);
   optimalBallFinished = (sOpt == LOpt);
+
+  if (mainBallFinished && mainSimulationSeconds == 0.0)
+    mainSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
+
+  if (optimalBallFinished && optimalSimulationSeconds == 0.0)
+    optimalSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
 
   if (mainBallFinished && optimalBallFinished) // fine della simulazione (hanno entrambe raggiunto la fine)
   {
