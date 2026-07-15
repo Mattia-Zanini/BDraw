@@ -28,25 +28,25 @@ class SimulationCanvas : public QGraphicsView
 {
     Q_OBJECT
 
-    // Metodi
+        // Metodi
 public:
-    explicit SimulationCanvas(QWidget *parent = nullptr);
+    explicit SimulationCanvas(QWidget* parent = nullptr);
     ~SimulationCanvas() override;
 
-    void redrawCurve(const QList<QPointF> &newPoints);                                  // ridisegna la curva
+    void redrawCurve(const QList<QPointF>& newPoints);                                  // ridisegna la curva
     void clearScene();                                                                  // pulisce la scena e resetta i dati
     void drawLine();                                                                    // disegna una retta
     void drawCycloid();                                                                 // disegna una cicloide
     void drawCircle();                                                                  // disegna un arco di circonferenza
-    const double computeTheoreticalTime(const QList<QPointF> &customPoints = {}) const; // calcola il tempo teorico di una curva
+    const double computeTheoreticalTime(const QList<QPointF>& customPoints = {}) const; // calcola il tempo teorico di una curva
     void startSimulation();                                                             // avvia la simulazione e l'animazione
     const double getSimulationTime() const;                                             // ritorna il tempo reale impiegato dall'ultima simulazione
     void setMetersPerPixel(double val);                                                 // imposta la scala di conversione pixel/metri
     bool hasCurve() const;                                                              // controlla se è presente almeno una curva disegnata
     const double getCurveLength() const;                                                // ritorna la lunghezza totale della curva in metri
     const QPointF getEndPoint() const;                                                  // ritorna l'ultimo punto della curva corrente
-    const double computeBestTheoreticalTime(const QPointF &target) const;               // calcola il tempo teorico della cicloide passante per il target
-    void drawCurveFromFormula(const QString &formulaStr);
+    const double computeBestTheoreticalTime(const QPointF& target) const;               // calcola il tempo teorico della cicloide passante per il target
+    void drawCurveFromFormula(const QString& formulaStr);
 
 signals:
     void drawingFinished();    // segnala è terminato il disegno
@@ -58,24 +58,24 @@ public slots:
 
 private:
     // Metodi per gestire gli eventi del mouse
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
-    void drawBackground(QPainter *painter, const QRectF &rect) override;
-    void resizeEvent(QResizeEvent *event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void drawBackground(QPainter* painter, const QRectF& rect) override;
+    void resizeEvent(QResizeEvent* event) override;
 
-    const QString pointToString(const QPointF &) const;                                                           // converte un punto nel formato stringa "(x, y)" (DEBUG)
-    const QString pointsToString(const QList<QPointF> &) const;                                                   // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
+    const QString pointToString(const QPointF& p) const;                                                          // converte un punto nel formato stringa "(x, y)" (DEBUG)
+    const QString pointsToString(const QList<QPointF>& pList) const;                                              // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
     void postProcessingCurve();                                                                                   // tolgo i punti che non rispettano la crescita monotona in X.
-    const double applyScale(const double) const;                                                                  // Converte un valore da pixel a metri basandosi sulla scala impostata
-    const double getScaledPointsDistance(const QPointF &p1, const QPointF &p2) const;                             // calcola la distanza euclidea fra 2 punti
-    const double getSineAt(const double) const;                                                                   // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
-    void computeCumulativeDistance();                                                                             // calcola le distanze cumulative dei segmenti della curva
-    QList<QPointF> generateCycloidPoints(const QPointF &target, const QPointF &startPoint = QPointF(0, 0)) const; // genera i punti di una cicloide che termina sul target
+    const double applyScale(const double pixels) const;                                                           // Converte un valore da pixel a metri basandosi sulla scala impostata
+    const double getScaledPointsDistance(const QPointF& p1, const QPointF& p2) const;                             // calcola la distanza euclidea fra 2 punti
+    const double getSineAt(const double s, const std::vector<double>& cumDist, const QList<QPointF>& pts) const;  // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
+    void computeCumulativeDistance(const QList<QPointF>& pts, std::vector<double>& cumDist);                      // calcola le distanze cumulative dei segmenti della curva
+    QList<QPointF> generateCycloidPoints(const QPointF& target, const QPointF& startPoint = QPointF(0, 0)) const; // genera i punti di una cicloide che termina sul target
     void updatePhysics();                                                                                         // esegue l'integrazione numerica dello stato della pallina
-    void updateBallPosition(const double s);                                                                      // aggiorna la posizione grafica della pallina sulla curva
-    const double clampDistance(const double) const;                                                               // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
-    const int getSegmentIndex(const double) const;                                                                // ritorna l'indice del segmento rispetto alla distanza cumulativa
+    void updateBallPosition(const double s, QGraphicsEllipseItem* ball, const QPainterPath& path, const QList<QPointF>& pts, const std::vector<double>& cumDist);  // aggiorna la posizione grafica della pallina sulla curva
+    const double clampDistance(const double s, const std::vector<double>& cumDist) const;                                                             // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
+    const int getSegmentIndex(const double s, const std::vector<double>& cumDist) const;                          // ritorna l'indice del segmento rispetto alla distanza cumulativa
     void updateOptimalCurve();                                                                                    // calcola e disegna la curva ottima se abilitata
 
     // Attributi
@@ -91,23 +91,29 @@ private:
     const double maxTimeElapsed = 0.05; // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
 
     bool showTarget = false;
+    bool mainBallFinished = false;
+    bool optimalBallFinished = false;
 
-    QGraphicsScene *scene;
+    QGraphicsScene* scene;
     QPainterPath curve;
+    QPainterPath optimalPath;
     QPen pen;
-    QGraphicsPathItem *curveItem;
-    QGraphicsEllipseItem *ballItem;
+    QGraphicsPathItem* curveItem;
+    QGraphicsEllipseItem* ballItem;
+    QGraphicsEllipseItem* ballOptimal;
     QList<QPointF> points;
     bool isUserDrawing;
     double metersPerPixel;
     arma::vec2 state;                       // stato del sistema
-    QTimer *simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
+    arma::vec2 stateOptimal;                       // stato del sistema ottimo
+    QTimer* simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
     QElapsedTimer totalSimulationTime;      // misura la durata totale dell'intera simulazione
     double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
+    std::vector<double> cumulativeDistanceOptimal;
     QList<QPointF> optimalCurve;
-    QGraphicsPathItem *optimalCurveItem;
+    QGraphicsPathItem* optimalCurveItem;
     QPen bestPen;
     bool showOptimal;
     bool isCycloid;

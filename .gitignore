@@ -105,6 +105,7 @@ bin/
 files_md/
 .vscode/
 vcpkg_installed/
+.clang-format
 
 ### LaTeX ###
 LaTeX\ Tesi/*.aux

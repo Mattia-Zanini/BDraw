@@ -9,7 +9,7 @@ SimulationCanvas::~SimulationCanvas()
 }
 
 // Inizializza il widget e configura la scena grafica e la fisica.
-SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
+SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent)
 {
   // imposto la scena
   scene = new QGraphicsScene(this);
@@ -38,11 +38,20 @@ SimulationCanvas::SimulationCanvas(QWidget *parent) : QGraphicsView(parent)
   optimalCurveItem = nullptr;
   showOptimal = false;
   isCycloid = false;
+  curve = QPainterPath();
+
   ballItem = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
   ballItem->setBrush(QBrush(Qt::white)); // Pallina bianca
   ballItem->setZValue(100);
   ballItem->hide();
   scene->addItem(ballItem);
+
+  ballOptimal = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
+  ballOptimal->setBrush(QBrush(Qt::white)); // Pallina bianca
+  ballOptimal->setZValue(-1);
+  ballOptimal->hide();
+  scene->addItem(ballOptimal);
+
   metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
   simulationClock = new QTimer(this);
@@ -65,7 +74,7 @@ void SimulationCanvas::setMetersPerPixel(double val)
   if (hasCurve())
   {
     cumulativeDistance.clear();
-    computeCumulativeDistance();
+    computeCumulativeDistance(points, cumulativeDistance);
   }
 }
 
@@ -88,7 +97,7 @@ const QPointF SimulationCanvas::getEndPoint() const
   return points.last();
 }
 
-const double SimulationCanvas::computeBestTheoreticalTime(const QPointF &target) const
+const double SimulationCanvas::computeBestTheoreticalTime(const QPointF& target) const
 {
   if (isCycloid)
     return computeTheoreticalTime(points);
@@ -115,42 +124,42 @@ void SimulationCanvas::setShowOptimal(bool show)
 
 void SimulationCanvas::updateOptimalCurve()
 {
-  if (!showOptimal || hasCurve() == false || isCycloid)
+  cumulativeDistanceOptimal.clear();
+  optimalCurve.clear();
+  optimalPath.clear();
+
+  if (hasCurve() == false)
   {
     if (optimalCurveItem)
       optimalCurveItem->hide();
+
+    ballOptimal->hide();
     return;
   }
 
   QPointF target = getEndPoint();
   optimalCurve = generateCycloidPoints(target, points.first());
 
-  // se la cicloide ottimale è vuota (caso fisicamente impossibile), nascondo il tracciato grafico
-  if (optimalCurve.isEmpty())
-  {
-    if (optimalCurveItem)
-      optimalCurveItem->hide();
-    return;
-  }
+  computeCumulativeDistance(optimalCurve, cumulativeDistanceOptimal);
 
-  QPainterPath optimalPath;
   optimalPath.moveTo(optimalCurve.first());
   for (int i = 1; i < optimalCurve.size(); ++i)
     optimalPath.lineTo(optimalCurve[i]);
 
+
   if (optimalCurveItem)
-  {
     optimalCurveItem->setPath(optimalPath);
-    optimalCurveItem->show();
-  }
   else
   {
     optimalCurveItem = scene->addPath(optimalPath, bestPen);
     optimalCurveItem->setZValue(-1);
   }
+
+  ballOptimal->setVisible(showOptimal && !isCycloid);
+  optimalCurveItem->setVisible(showOptimal && !isCycloid);
 }
 
-QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, const QPointF &startPoint) const
+QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF& target, const QPointF& startPoint) const
 {
   QPointF relativeTarget = target - startPoint;
   QList<QPointF> cycloidPoints;
@@ -162,7 +171,7 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, co
   if (relativeTarget.x() < 0.0 || relativeTarget.y() < 0.0)
   {
     spdlog::warn("{} Impossibile generare la cicloide: il target è più in alto del punto di partenza o a sinistra (x_diff = {}, y_diff = {})",
-                 logTag, relativeTarget.x(), relativeTarget.y());
+      logTag, relativeTarget.x(), relativeTarget.y());
     return cycloidPoints;
   }
 
@@ -188,10 +197,10 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, co
     // phi(t) = ( t - sin(t) ) / ( 1 - cos(t) )
     // f(t) = phi(t) - q
     auto f = [q](double t) -> double
-    {
-      // dovrò risolvere l'equazione f(t) = 0 -> phi(t) - q = 0
-      return (t - std::sin(t)) / (1.0 - std::cos(t)) - q;
-    };
+      {
+        // dovrò risolvere l'equazione f(t) = 0 -> phi(t) - q = 0
+        return (t - std::sin(t)) / (1.0 - std::cos(t)) - q;
+      };
 
     // range di ricerca: sto strettamente dentro (0, 2*PI) per evitare le divisioni per 0 agli estremi
     double left = threshold;
@@ -212,7 +221,7 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, co
       // ottenuto tau, ricavo c dalla seconda equazione parametrica
       c = B / (1.0 - std::cos(tau));
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
       spdlog::error("{} Errore durante il calcolo di TOMS748: {}", logTag, e.what());
       return cycloidPoints;
@@ -236,18 +245,18 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF &target, co
   cycloidPoints.last() = target;
 
   spdlog::info(
-      "{} Generata CICLOIDE con tau = {} , c = {} , inizio = {} , fine = {}",
-      logTag, tau, c, pointToString(cycloidPoints.first()).toStdString(), pointToString(cycloidPoints.last()).toStdString());
+    "{} Generata CICLOIDE con tau = {} , c = {} , inizio = {} , fine = {}",
+    logTag, tau, c, pointToString(cycloidPoints.first()).toStdString(), pointToString(cycloidPoints.last()).toStdString());
 
   return cycloidPoints;
 }
 
-const QString SimulationCanvas::pointToString(const QPointF &p) const
+const QString SimulationCanvas::pointToString(const QPointF& p) const
 {
   return QString("(x = %1, y = %2)").arg(p.x()).arg(p.y());
 }
 
-const QString SimulationCanvas::pointsToString(const QList<QPointF> &pList) const
+const QString SimulationCanvas::pointsToString(const QList<QPointF>& pList) const
 {
   QString result = QString("");
 
@@ -274,22 +283,26 @@ void SimulationCanvas::clearScene()
   simulationClock->stop();
   totSimulationSeconds = 0.0;
   cumulativeDistance.clear();
+  cumulativeDistanceOptimal.clear();
   scene->removeItem(ballItem); // tolgo la pallina dalla scena senza distruggerla
+  scene->removeItem(ballOptimal);
   scene->clear();              // cancello in sicurezza tutti gli altri elementi
   scene->addItem(ballItem);    // reinserisco la palla nella scena per la prossima simulazione
+  scene->addItem(ballOptimal);
   ballItem->hide();
+  ballOptimal->hide();
   curveItem = nullptr;
   optimalCurveItem = nullptr;
   spdlog::debug("{} Scena pulita", logTag);
 }
 
-const double SimulationCanvas::clampDistance(const double s) const
+const double SimulationCanvas::clampDistance(const double s, const std::vector<double>& cumDist) const
 {
-  DEBUG_ASSERT(cumulativeDistance.size() != 0, "Deve esistere almeno un segmento");
-  return std::clamp(s, 0.0, cumulativeDistance.back());
+  DEBUG_ASSERT(cumDist.size() != 0, "Deve esistere almeno un segmento");
+  return std::clamp(s, 0.0, cumDist.back());
 }
 
-const double SimulationCanvas::getScaledPointsDistance(const QPointF &p1, const QPointF &p2) const
+const double SimulationCanvas::getScaledPointsDistance(const QPointF& p1, const QPointF& p2) const
 {
   double x1 = applyScale(p1.x());
   double y1 = applyScale(p1.y());
@@ -299,52 +312,52 @@ const double SimulationCanvas::getScaledPointsDistance(const QPointF &p1, const 
   return std::hypot(x2 - x1, y2 - y1);
 }
 
-void SimulationCanvas::computeCumulativeDistance()
+void SimulationCanvas::computeCumulativeDistance(const QList<QPointF>& pts, std::vector<double>& cumDist)
 {
-  if (points.count() < 2)
+  if (pts.count() < 2)
     return;
 
-  DEBUG_ASSERT(cumulativeDistance.empty() == true, "il vettore delle distanze cumulative deve essere pulito prima di calcolarne di nuove");
-  cumulativeDistance.reserve(points.count() - 1); // da n punti ottengo n-1 segmenti
+  DEBUG_ASSERT(cumDist.empty() == true, "il vettore delle distanze cumulative deve essere pulito prima di calcolarne di nuove");
+  cumDist.reserve(pts.count() - 1); // da n punti ottengo n-1 segmenti
   double s = 0.0;
 
-  for (int i = 1; i < points.count(); i++)
+  for (int i = 1; i < pts.count(); i++)
   {
-    s += getScaledPointsDistance(points[i - 1], points[i]);
-    cumulativeDistance.push_back(s);
+    s += getScaledPointsDistance(pts[i - 1], pts[i]);
+    cumDist.push_back(s);
   }
 }
 
-const int SimulationCanvas::getSegmentIndex(double s) const
+const int SimulationCanvas::getSegmentIndex(const double s, const std::vector<double>& cumDist) const
 {
-  DEBUG_ASSERT(cumulativeDistance.size() > 0, "Deve essere presente almeno un segmento"); // 1 segmento => 2 punti
-  auto it = std::upper_bound(cumulativeDistance.begin(), cumulativeDistance.end(), s);    // elemento per cui il valore è < s (minore STRETTO)
-  int i = std::distance(cumulativeDistance.begin(), it);                                  // posizione del segmento nel vettore
+  DEBUG_ASSERT(cumDist.size() > 0, "Deve essere presente almeno un segmento"); // 1 segmento => 2 punti
+  auto it = std::upper_bound(cumDist.begin(), cumDist.end(), s);    // elemento per cui il valore è < s (minore STRETTO)
+  int i = std::distance(cumDist.begin(), it);                                  // posizione del segmento nel vettore
 
-  if (i >= cumulativeDistance.size())
-    i = cumulativeDistance.size() - 1;
+  if (i >= cumDist.size())
+    i = cumDist.size() - 1;
 
-  DEBUG_ASSERT(i >= 0 && i < cumulativeDistance.size(), "L'index del segmento ottenuto è fuori dal range dei valori validi", i, cumulativeDistance.size(), cumulativeDistance, s);
+  DEBUG_ASSERT(i >= 0 && i < cumDist.size(), "L'index del segmento ottenuto è fuori dal range dei valori validi", i, cumDist.size(), cumDist, s);
   return i;
 }
 
-const double SimulationCanvas::getSineAt(double s) const
+const double SimulationCanvas::getSineAt(const double s, const std::vector<double>& cumDist, const QList<QPointF>& pts) const
 {
-  DEBUG_ASSERT(cumulativeDistance.size() > 0, "Deve essere presente almeno un segmento");
+  DEBUG_ASSERT(cumDist.size() > 0, "Deve essere presente almeno un segmento");
 
-  int index = getSegmentIndex(s);
-  double dx = points[index + 1].x() - points[index].x();
-  double dy = points[index + 1].y() - points[index].y();
+  int index = getSegmentIndex(s, cumDist);
+  double dx = pts[index + 1].x() - pts[index].x();
+  double dy = pts[index + 1].y() - pts[index].y();
   double ds = std::hypot(dx, dy);
 
   DEBUG_ASSERT(ds > 0, "Segmento di lunghezza nulla");
   return dy / ds;
 }
 
-void SimulationCanvas::redrawCurve(const QList<QPointF> &newPoints)
+void SimulationCanvas::redrawCurve(const QList<QPointF>& newPoints)
 {
   points = newPoints;
-  curve = QPainterPath();
+  curve.clear();
 
   if (!points.isEmpty())
   {
@@ -385,13 +398,13 @@ void SimulationCanvas::drawLine()
   redrawCurve(points);
 
   spdlog::info(
-      "{} Disegnata la RETTA con inizio: {} e fine: {}; utilizzando {} punti",
-      logTag,
-      pointToString(points.first()).toStdString(),
-      pointToString(points.back()).toStdString(),
-      points.count());
+    "{} Disegnata la RETTA con inizio: {} e fine: {}; utilizzando {} punti",
+    logTag,
+    pointToString(points.first()).toStdString(),
+    pointToString(points.back()).toStdString(),
+    points.count());
 
-  computeCumulativeDistance();
+  computeCumulativeDistance(points, cumulativeDistance);
   isCycloid = false;
   updateOptimalCurve();
 
@@ -429,13 +442,13 @@ void SimulationCanvas::drawCircle()
   redrawCurve(points);
 
   spdlog::info(
-      "{} Disegnato l'ARCO di circonferenza con inizio: {} e fine: {}; utilizzando {} punti",
-      logTag,
-      pointToString(points.first()).toStdString(),
-      pointToString(points.back()).toStdString(),
-      points.count());
+    "{} Disegnato l'ARCO di circonferenza con inizio: {} e fine: {}; utilizzando {} punti",
+    logTag,
+    pointToString(points.first()).toStdString(),
+    pointToString(points.back()).toStdString(),
+    points.count());
 
-  computeCumulativeDistance();
+  computeCumulativeDistance(points, cumulativeDistance);
   isCycloid = false;
   updateOptimalCurve();
 
@@ -456,20 +469,20 @@ void SimulationCanvas::drawCycloid()
   redrawCurve(points);
 
   spdlog::info(
-      "{} Disegnata la CICLOIDE con inizio: {} e fine: {}; utilizzando {} punti",
-      logTag,
-      pointToString(points.first()).toStdString(),
-      pointToString(points.back()).toStdString(),
-      points.count());
+    "{} Disegnata la CICLOIDE con inizio: {} e fine: {}; utilizzando {} punti",
+    logTag,
+    pointToString(points.first()).toStdString(),
+    pointToString(points.back()).toStdString(),
+    points.count());
 
-  computeCumulativeDistance();
+  computeCumulativeDistance(points, cumulativeDistance);
   isCycloid = true;
   updateOptimalCurve();
   emit drawingFinished();
 }
 
 // GESTIONE DEL CLICK
-void SimulationCanvas::mousePressEvent(QMouseEvent *event)
+void SimulationCanvas::mousePressEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::LeftButton)
   {
@@ -498,7 +511,7 @@ void SimulationCanvas::mousePressEvent(QMouseEvent *event)
 }
 
 // GESTIONE DEL MOVIMENTO
-void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
+void SimulationCanvas::mouseMoveEvent(QMouseEvent* event)
 {
   // verifico se il tasto sinistro è attualmente ancora premuto
   if (event->buttons() & Qt::LeftButton)
@@ -520,7 +533,7 @@ void SimulationCanvas::mouseMoveEvent(QMouseEvent *event)
 }
 
 // GESTIONE DEL RILASCIO
-void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
+void SimulationCanvas::mouseReleaseEvent(QMouseEvent* event)
 {
   // verifico se è stato rilasciato il tasto
   if (event->button() == Qt::LeftButton && isUserDrawing)
@@ -528,7 +541,7 @@ void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
     isUserDrawing = false; // il disegno è terminato
     spdlog::debug("{} Disegno terminato", logTag);
     postProcessingCurve();
-    computeCumulativeDistance();
+    computeCumulativeDistance(points, cumulativeDistance);
 
     isCycloid = false;
     updateOptimalCurve();
@@ -539,7 +552,7 @@ void SimulationCanvas::mouseReleaseEvent(QMouseEvent *event)
   QGraphicsView::mouseReleaseEvent(event);
 }
 
-void SimulationCanvas::resizeEvent(QResizeEvent *event)
+void SimulationCanvas::resizeEvent(QResizeEvent* event)
 {
   QGraphicsView::resizeEvent(event);
   if (initWidth == 0 && viewport()->width() > 0)
@@ -578,9 +591,9 @@ void SimulationCanvas::postProcessingCurve()
   spdlog::debug("{} Curva processata, ora sono presenti {} punti", logTag, points.size());
 }
 
-const double SimulationCanvas::computeTheoreticalTime(const QList<QPointF> &customPoints) const
+const double SimulationCanvas::computeTheoreticalTime(const QList<QPointF>& customPoints) const
 {
-  const QList<QPointF> &pts = customPoints.isEmpty() ? points : customPoints;
+  const QList<QPointF>& pts = customPoints.isEmpty() ? points : customPoints;
   double totalTime = 0.0;
 
   if (pts.count() < 2)
@@ -622,7 +635,7 @@ void SimulationCanvas::drawRedDot(bool show)
   viewport()->update(); // richiede un aggiornamento grafico della vista
 }
 
-void SimulationCanvas::drawBackground(QPainter *painter, const QRectF &rect)
+void SimulationCanvas::drawBackground(QPainter* painter, const QRectF& rect)
 {
   QGraphicsView::drawBackground(painter, rect); // esegue il disegno di sfondo predefinito
 
@@ -651,7 +664,9 @@ void SimulationCanvas::startSimulation()
 
   simulationClock->stop();
   state.zeros();
-  updateBallPosition(0.0);
+  stateOptimal.zeros();
+  updateBallPosition(0.0, ballItem, curve, points, cumulativeDistance);
+  updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
   ballItem->show();
   totSimulationSeconds = 0.0;
   double curveTotalLength = cumulativeDistance.back();
@@ -672,34 +687,61 @@ void SimulationCanvas::updatePhysics()
   if (dt > maxTimeElapsed)
     dt = deltaTimeSeconds;
 
-  double sine = getSineAt(clampDistance(state(0))); // sin(s(k))
-  arma::mat A = {{1.0, dt},
-                 {0.0, 1}};
-  arma::vec2 B = {0.0, dt * sine}; // B = [ 0, dt * seno ]^T
-  double u = gravity;              // vettore d'ingresso u(k) = g
+  arma::mat A = { {1.0, dt},
+                  {0.0, 1} };
+  arma::vec2 B = { 0.0, 0.0 };
+  double sine = 0.0;
+  double sineOpt = 0.0;
+  double u = gravity; // vettore d'ingresso u(k) = g
 
-  // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
-  state = A * state + B * u;
+  // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
+  if (mainBallFinished == false) {
+    sine = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
+    B = { 0.0, dt * sine }; // B = [ 0, dt * seno ]^T
+
+    // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
+    state = A * state + B * u;
+  }
+
+  // AGGIORNO LO STATO DEL PERCORSO OTTIMO
+  if (optimalBallFinished == false) {
+    sineOpt = getSineAt(clampDistance(stateOptimal(0), cumulativeDistanceOptimal), cumulativeDistanceOptimal, optimalCurve);
+    B = { 0.0, dt * sineOpt };
+    stateOptimal = A * stateOptimal + B * u;
+  }
+
+  bool illegalStateMain = state(0) < -0.01;
+  bool illegalStateOptimal = stateOptimal(0) < -0.01;
 
   // se la pallina torna indietro oltre l'inizio della curva termino la simulazione
-  if (state(0) < -0.01)
+  if (illegalStateMain || illegalStateOptimal)
   {
-    spdlog::warn("{} La pallina è tornata indietro oltre l'inizio della curva, termino la simulazione", logTag);
+    mainBallFinished = true;
+    optimalBallFinished = true;
+
+    spdlog::warn("{} Una delle palline è tornata indietro oltre l'inizio della curva, termino la simulazione", logTag);
     simulationClock->stop();
     totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
     emit simulationFinished();
     return;
   }
 
-  state(0) = clampDistance(state(0));
+  state(0) = clampDistance(state(0), cumulativeDistance);
+  stateOptimal(0) = clampDistance(stateOptimal(0), cumulativeDistanceOptimal);
   spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
+  spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
   double s = state(0);
-  double velocity = state(1);
+  double sOpt = stateOptimal(0);
   double L = cumulativeDistance.back();
+  double LOpt = cumulativeDistanceOptimal.back();
 
-  updateBallPosition(s);
+  updateBallPosition(s, ballItem, curve, points, cumulativeDistance);
+  updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
 
-  if (s == L) // fine della simulazione (ha raggiunto il fondo)
+  mainBallFinished = (s == L);
+  optimalBallFinished = (sOpt == LOpt);
+
+  if (mainBallFinished && optimalBallFinished) // fine della simulazione (hanno entrambe raggiunto la fine)
   {
     simulationClock->stop();
     totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
@@ -708,14 +750,16 @@ void SimulationCanvas::updatePhysics()
   }
 }
 
-void SimulationCanvas::updateBallPosition(const double s)
+void SimulationCanvas::updateBallPosition(const double s, QGraphicsEllipseItem* ball, const QPainterPath& path, const QList<QPointF>& pts, const std::vector<double>& cumDist)
 {
-  DEBUG_ASSERT(s >= 0.0 && s <= cumulativeDistance.back(), "L'ascissa curvilinea s è fuori dai limiti della curva", s, cumulativeDistance.back());
+  DEBUG_ASSERT(s >= 0.0 && s <= cumDist.back(), "L'ascissa curvilinea s è fuori dai limiti della curva", s, cumDist.back());
+  DEBUG_ASSERT(ball != nullptr, "L'oggetto della sfera non è stato creato", ball);
+
   // CALCOLO DELLA NORMALE ALLA CURVA
   arma::vec2 n; // vettore normale
-  int indexSegment = getSegmentIndex(s);
-  arma::vec2 pointA = {points[indexSegment].x(), points[indexSegment].y()};
-  arma::vec2 pointB = {points[indexSegment + 1].x(), points[indexSegment + 1].y()};
+  int indexSegment = getSegmentIndex(s, cumDist);
+  arma::vec2 pointA = { pts[indexSegment].x(), pts[indexSegment].y() };
+  arma::vec2 pointB = { pts[indexSegment + 1].x(), pts[indexSegment + 1].y() };
   arma::vec2 v = pointB - pointA; // vettore direzione
 
   double dx = v(0);
@@ -723,9 +767,9 @@ void SimulationCanvas::updateBallPosition(const double s)
 
   // seleziono la normale in base al segno di dx
   if (dx >= 0.0) // segmento verso destra o perfettamente verticale
-    n = {dy, -dx};
+    n = { dy, -dx };
   else // segmento verso sinistra
-    n = {-dy, dx};
+    n = { -dy, dx };
 
   n = arma::normalise(n); // normalizzo il vettore
 
@@ -735,12 +779,12 @@ void SimulationCanvas::updateBallPosition(const double s)
   double offsetY = n(1) * (ballRadius + 1);
 
   // aggiornamento della posizione visiva
-  double percent = curve.percentAtLength(s / metersPerPixel);
-  QPointF pos = curve.pointAtPercent(percent); // ottengo la posizione (x,y) della pallina sulla curva (senza offset)
-  ballItem->setPos(pos.x() + offsetX - ballRadius, pos.y() + offsetY - ballRadius);
+  double percent = path.percentAtLength(s / metersPerPixel);
+  QPointF pos = path.pointAtPercent(percent); // ottengo la posizione (x,y) della pallina sulla curva (senza offset)
+  ball->setPos(pos.x() + offsetX - ballRadius, pos.y() + offsetY - ballRadius);
 }
 
-void SimulationCanvas::drawCurveFromFormula(const QString &formulaStr)
+void SimulationCanvas::drawCurveFromFormula(const QString& formulaStr)
 {
   clearScene();
 
@@ -794,7 +838,7 @@ void SimulationCanvas::drawCurveFromFormula(const QString &formulaStr)
 
   redrawCurve(points);
   postProcessingCurve();
-  computeCumulativeDistance();
+  computeCumulativeDistance(points, cumulativeDistance);
   updateOptimalCurve();
 
   spdlog::info("{} Curva generata da equazione con {} punti", logTag, points.count());
