@@ -25,6 +25,10 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 
+if(QT_VERSION VERSION_LESS 6.5.0)
+    message(FATAL_ERROR "La versione di Qt deve essere almeno 6.5.0. Trovata versione: ${QT_VERSION}")
+endif()
+
 find_package(spdlog CONFIG REQUIRED)
 find_package(Armadillo REQUIRED) # Rimosso CONFIG per maggiore compatibilità
 find_package(Boost REQUIRED)
