@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h> // Necessario per i log colorati
-#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 #include <vector>
 
 #include <QApplication>
@@ -11,13 +11,17 @@
 
 // Funzione di callback che intercetta i messaggi di Qt
 // (qDebug, qWarning, ecc.) e li ridirige verso spdlog.
-void qtMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     // Crea un logger per la console che supporta i colori
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true);
+
+    // rotating_file_sink_mt(nome_file, dimensione_massima_in_byte, numero_massimo_di_file, rotate_on_open)
+    // - Mantiene fino a 10 storici (log.1.txt, log.2.txt...)
+    // - "true" finale forza la rotazione ad ogni nuovo avvio dell'app (file pulito per ogni sessione)
+    auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("log.txt", 1024 * 1024 * 5, 3, true);
 
     // Imposta il livello del file sink a DEBUG in modo da registrare sempre tutti i dettagli
     file_sink->set_level(spdlog::level::debug);
@@ -29,9 +33,9 @@ int main(int argc, char *argv[])
     console_sink->set_level(spdlog::level::debug);
 #endif
 
-    std::vector<spdlog::sink_ptr> sinks {console_sink, file_sink};
+    std::vector<spdlog::sink_ptr> sinks{ console_sink, file_sink };
     auto logger = std::make_shared<spdlog::logger>("multi_logger", sinks.begin(), sinks.end());
-    
+
     // Imposta il livello del logger globale a DEBUG per permettere ai singoli sink di filtrare i messaggi
     logger->set_level(spdlog::level::debug);
     spdlog::set_default_logger(logger);
@@ -47,7 +51,7 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages)
+    for (const QString& locale : uiLanguages)
     {
         const QString baseName = "BDraw_" + QLocale(locale).name();
         if (translator.load(":/i18n/" + baseName))
@@ -63,7 +67,7 @@ int main(int argc, char *argv[])
     return QCoreApplication::exec();
 }
 
-void qtMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
     std::string message = msg.toStdString();
 

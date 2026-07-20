@@ -39,6 +39,9 @@ SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent)
   showOptimal = false;
   isCycloid = false;
   curve = QPainterPath();
+  showTarget = false;
+  mainBallFinished = false;
+  optimalBallFinished = false;
 
   ballItem = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
   ballItem->setBrush(QBrush(Qt::white)); // Pallina bianca
@@ -78,6 +81,11 @@ void SimulationCanvas::setMetersPerPixel(double val)
     cumulativeDistance.clear();
     computeCumulativeDistance(points, cumulativeDistance);
   }
+}
+
+int SimulationCanvas::getScaledSampleCount(int basePoints) const
+{
+  return basePoints * ((double)viewport()->width() / initWidth);
 }
 
 bool SimulationCanvas::hasCurve() const
@@ -141,6 +149,14 @@ void SimulationCanvas::updateOptimalCurve()
 
   QPointF target = getEndPoint();
   optimalCurve = generateCycloidPoints(target, points.first());
+
+  if (optimalCurve.isEmpty()) {
+    if (optimalCurveItem)
+      optimalCurveItem->hide();
+
+    ballOptimal->hide();
+    return;
+  }
 
   computeCumulativeDistance(optimalCurve, cumulativeDistanceOptimal);
 
@@ -248,17 +264,17 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF& target, co
 
   spdlog::info(
     "{} Generata CICLOIDE con tau = {} , c = {} , inizio = {} , fine = {}",
-    logTag, tau, c, pointToString(cycloidPoints.first()).toStdString(), pointToString(cycloidPoints.last()).toStdString());
+    logTag, tau, c, pointToString(cycloidPoints.first()), pointToString(cycloidPoints.last()));
 
   return cycloidPoints;
 }
 
-const QString SimulationCanvas::pointToString(const QPointF& p) const
+const std::string SimulationCanvas::pointToString(const QPointF& p) const
 {
-  return QString("(x = %1, y = %2)").arg(p.x()).arg(p.y());
+  return QString("(x = %1, y = %2)").arg(p.x()).arg(p.y()).toStdString();
 }
 
-const QString SimulationCanvas::pointsToString(const QList<QPointF>& pList) const
+const std::string SimulationCanvas::pointsToString(const QList<QPointF>& pList) const
 {
   QString result = QString("");
 
@@ -268,7 +284,7 @@ const QString SimulationCanvas::pointsToString(const QList<QPointF>& pList) cons
     result += "\n";
   }
 
-  return result;
+  return result.toStdString();
 }
 
 const double SimulationCanvas::applyScale(const double pixels) const
@@ -406,8 +422,8 @@ void SimulationCanvas::drawLine()
   spdlog::info(
     "{} Disegnata la RETTA con inizio: {} e fine: {}; utilizzando {} punti",
     logTag,
-    pointToString(points.first()).toStdString(),
-    pointToString(points.back()).toStdString(),
+    pointToString(points.first()),
+    pointToString(points.back()),
     points.count());
 
   computeCumulativeDistance(points, cumulativeDistance);
@@ -431,7 +447,7 @@ void SimulationCanvas::drawCircle()
   double Rx = targetX;
   double Ry = targetY;
 
-  int numPoints = 50;
+  int numPoints = getScaledSampleCount();
   points.reserve(numPoints);
   points.append(QPointF(0.0, 0.0)); // punto iniziale
 
@@ -450,8 +466,8 @@ void SimulationCanvas::drawCircle()
   spdlog::info(
     "{} Disegnato l'ARCO di circonferenza con inizio: {} e fine: {}; utilizzando {} punti",
     logTag,
-    pointToString(points.first()).toStdString(),
-    pointToString(points.back()).toStdString(),
+    pointToString(points.first()),
+    pointToString(points.back()),
     points.count());
 
   computeCumulativeDistance(points, cumulativeDistance);
@@ -477,8 +493,8 @@ void SimulationCanvas::drawCycloid()
   spdlog::info(
     "{} Disegnata la CICLOIDE con inizio: {} e fine: {}; utilizzando {} punti",
     logTag,
-    pointToString(points.first()).toStdString(),
-    pointToString(points.back()).toStdString(),
+    pointToString(points.first()),
+    pointToString(points.back()),
     points.count());
 
   computeCumulativeDistance(points, cumulativeDistance);
@@ -672,16 +688,21 @@ void SimulationCanvas::startSimulation()
   state.zeros();
   stateOptimal.zeros();
   updateBallPosition(0.0, ballItem, curve, points, cumulativeDistance);
-  updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
-  optimalBallFinished = false;
+
+  // se vengono disegnate curve che hanno il punto finale più in alto del punto iniziale allora la cicloide non viene generata.
+  if (!optimalCurve.isEmpty()) {
+    updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+    optimalBallFinished = false;
+  }
+  else
+    optimalBallFinished = true;
+
   mainBallFinished = false;
   ballItem->show();
   totSimulationSeconds = 0.0;
   mainSimulationSeconds = 0.0;
   optimalSimulationSeconds = 0.0;
   double curveTotalLength = cumulativeDistance.back();
-
-  // spdlog::debug("{} punti della curva\n{}", logTag, pointsToString(points).toStdString());
 
   // avvio i timer e il clock
   simulationClock->start(deltaTimeMilliseconds);
@@ -697,31 +718,39 @@ void SimulationCanvas::updatePhysics()
   if (dt > maxTimeElapsed)
     dt = deltaTimeSeconds;
 
-  arma::mat A = { {1.0, dt},
-                  {0.0, 1} };
-  arma::vec2 B = { 0.0, 0.0 };
   double sine = 0.0;
   double sineOpt = 0.0;
   double u = gravity; // vettore d'ingresso u(k) = g
 
-  // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
-  if (mainBallFinished == false) {
-    sine = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
-    B = { 0.0, dt * sine }; // B = [ 0, dt * seno ]^T
+  double sub_steps = 15.0;
+  double sub_dt = dt / sub_steps;
 
-    // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
-    state = A * state + B * u;
-  }
+  for (int i = 0; i < sub_steps; i++) {
+    arma::mat A = { {1.0, sub_dt},
+                    {0.0, 1} };
+    arma::vec2 B = { 0.0, 0.0 };
 
-  // AGGIORNO LO STATO DEL PERCORSO OTTIMO
-  if (optimalBallFinished == false) {
-    sineOpt = getSineAt(clampDistance(stateOptimal(0), cumulativeDistanceOptimal), cumulativeDistanceOptimal, optimalCurve);
-    B = { 0.0, dt * sineOpt };
-    stateOptimal = A * stateOptimal + B * u;
+    // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
+    if (mainBallFinished == false) {
+      sine = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
+      // B = { 0.0, dt * sine }; // B = [ 0, dt * seno ]^T
+      B = { sub_dt * sub_dt * sine, sub_dt * sine }; // B = [ 0, dt * seno ]^T
+
+      // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
+      state = A * state + B * u;
+    }
+
+    // AGGIORNO LO STATO DEL PERCORSO OTTIMO
+    if (optimalBallFinished == false) {
+      sineOpt = getSineAt(clampDistance(stateOptimal(0), cumulativeDistanceOptimal), cumulativeDistanceOptimal, optimalCurve);
+      // B = { 0.0, dt * sineOpt };
+      B = { sub_dt * sub_dt * sineOpt, sub_dt * sineOpt };
+      stateOptimal = A * stateOptimal + B * u;
+    }
   }
 
   bool illegalStateMain = state(0) < -0.01;
-  bool illegalStateOptimal = stateOptimal(0) < -0.01;
+  bool illegalStateOptimal = (!optimalCurve.isEmpty()) ? (stateOptimal(0) < -0.01) : false;
 
   // se la pallina torna indietro oltre l'inizio della curva termino la simulazione
   if (illegalStateMain || illegalStateOptimal)
@@ -743,16 +772,23 @@ void SimulationCanvas::updatePhysics()
   double L = cumulativeDistance.back();
   updateBallPosition(s, ballItem, curve, points, cumulativeDistance);
 
-  stateOptimal(0) = clampDistance(stateOptimal(0), cumulativeDistanceOptimal);
-  double sOpt = stateOptimal(0);
-  double LOpt = cumulativeDistanceOptimal.back();
-  updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+  double sOpt = 0.0;
+  double LOpt = 0.0;
+  if (!optimalCurve.isEmpty()) {
+    stateOptimal(0) = clampDistance(stateOptimal(0), cumulativeDistanceOptimal);
+    sOpt = stateOptimal(0);
+    LOpt = cumulativeDistanceOptimal.back();
+    updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+  }
 
   spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
   spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
 
   mainBallFinished = (s == L);
-  optimalBallFinished = (sOpt == LOpt);
+  if (!optimalCurve.isEmpty())
+    optimalBallFinished = (sOpt == LOpt); // considero l'avanzare sulla curva ottima solo se essa esiste
+  else
+    optimalBallFinished = true;
 
   if (mainBallFinished && mainSimulationSeconds == 0.0)
     mainSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
@@ -809,6 +845,7 @@ void SimulationCanvas::drawCurveFromFormula(const QString& formulaStr)
 
   // ottengo l'espressione matematica
   std::string expression_string = formulaStr.toStdString();
+  spdlog::info("{} Formula da disegnare: {}", logTag, expression_string);
   double x = 0.0;
 
   // configura la tabella dei simboli (associa la variabile "x" del testo alla variabile C++)
@@ -829,8 +866,10 @@ void SimulationCanvas::drawCurveFromFormula(const QString& formulaStr)
   }
 
   // genero i punti campionando lungo l'asse X del viewport
-  int numPoints = 250 * ((double)viewport()->width() / initWidth); // aumento i punti in modo lineare alla dimensione della finestra
+  int numPoints = getScaledSampleCount(); // aumento i punti in modo lineare alla dimensione della finestra
   spdlog::debug("{} initWidth: {}", logTag, initWidth);
+  spdlog::debug("{} viewport width: {}", logTag, (double)viewport()->width());
+  spdlog::debug("{} numPoints: {}", logTag, numPoints);
 
   double targetX = viewport()->width() - margin;
   double dx = targetX / numPoints;
@@ -860,7 +899,11 @@ void SimulationCanvas::drawCurveFromFormula(const QString& formulaStr)
   computeCumulativeDistance(points, cumulativeDistance);
   updateOptimalCurve();
 
-  spdlog::info("{} Curva generata da equazione con {} punti", logTag, points.count());
+  if (points.isEmpty())
+    spdlog::warn("{} La formula ha generato punti completamente fuori dai limiti del canvas o non validi", logTag);
+  else
+    spdlog::info("{} Curva generata da equazione con {} punti; punto iniziale: {}; punto finale: {}",
+      logTag, points.count(), pointToString(points.first()), pointToString(points.last()));
 
   emit drawingFinished();
 }

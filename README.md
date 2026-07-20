@@ -37,6 +37,7 @@ Il software è stato testato e validato su **macOS** e **Linux (Ubuntu)**.
 - `sqrt(x) * 15` (Lo scivolo ad acqua)
 - `x / 2 + sin(x / 15) * 15` (I Gradini morbidi)
 - `exp(x / 110) - 1` (Il burrone)
+- `-((x-200)/60)^4 + 300`
 
 ## Guida all'Installazione e Compilazione
 
