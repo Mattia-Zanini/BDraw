@@ -404,6 +404,43 @@ void SimulationCanvas::redrawCurve(const QList<QPointF>& newPoints)
   }
 }
 
+QList<QPointF> SimulationCanvas::upsampleDrawnCurve(const int newNumPoints) {
+  if (points.count() == newNumPoints) {
+    spdlog::debug("{} punti non interpolati in quanto sono già abbastanza numerosi: {} punti", logTag, points.count());
+    return points;
+  }
+  if (points.count() < 4) {
+    spdlog::debug("{} non sono presenti abbastanza punti per interpolare, ne sono necessari almeno 4", logTag, points.count());
+    return points;
+  }
+
+  spdlog::debug("{} points:\n{}", logTag, pointsToString(points));
+  std::vector<double> xValues, yValues;
+  xValues.reserve(points.count());
+  yValues.reserve(points.count());
+
+  for (const auto& p : points) {
+    xValues.push_back(p.x());
+    yValues.push_back(p.y());
+  }
+
+  // creo l'oggetto per l'interpolazione
+  boost::math::interpolators::pchip<std::vector<double>> spline(std::move(xValues), std::move(yValues));
+
+  double step = (points.last().x() - points.first().x()) / newNumPoints;
+  QList<QPointF> upsampledPoints;
+  upsampledPoints.reserve(newNumPoints);
+
+  double currentX = points.first().x();
+  for (int i = 0; i < newNumPoints; i++) {
+    upsampledPoints.push_back(QPointF(currentX, spline(currentX)));
+    currentX += step;
+  }
+  spdlog::debug("{} la curva disegnata a mano è stata interpolata con nuovi punti: {}", logTag, newNumPoints);
+
+  return upsampledPoints;
+}
+
 void SimulationCanvas::drawLine()
 {
   clearScene();
@@ -562,10 +599,14 @@ void SimulationCanvas::mouseReleaseEvent(QMouseEvent* event)
   {
     isUserDrawing = false; // il disegno è terminato
     spdlog::debug("{} Disegno terminato", logTag);
-    postProcessingCurve();
-    computeCumulativeDistance(points, cumulativeDistance);
 
     isCycloid = false;
+    postProcessingCurve();
+
+    QList<QPointF> newPoints = upsampleDrawnCurve(getScaledSampleCount());
+    redrawCurve(newPoints);
+
+    computeCumulativeDistance(points, cumulativeDistance);
     updateOptimalCurve();
 
     emit drawingFinished();
@@ -594,7 +635,7 @@ void SimulationCanvas::postProcessingCurve()
   qreal xMaxValue = viewport()->width() - threshold;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() >= min && points[i].y() >= threshold && points[i].x() <= xMaxValue)
+    if (points[i].x() > min && points[i].y() >= threshold && points[i].x() <= xMaxValue)
     {
       processedPoints.append(points[i]);
       min = points[i].x();
@@ -787,8 +828,6 @@ void SimulationCanvas::updatePhysics()
   mainBallFinished = (s == L);
   if (!optimalCurve.isEmpty())
     optimalBallFinished = (sOpt == LOpt); // considero l'avanzare sulla curva ottima solo se essa esiste
-  else
-    optimalBallFinished = true;
 
   if (mainBallFinished && mainSimulationSeconds == 0.0)
     mainSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;

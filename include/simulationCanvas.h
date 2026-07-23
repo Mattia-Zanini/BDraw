@@ -11,6 +11,8 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/beta.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
+#include <boost/math/interpolators/makima.hpp>
+#include <boost/math/interpolators/pchip.hpp>
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -79,6 +81,7 @@ private:
     const double clampDistance(const double s, const std::vector<double>& cumDist) const;                         // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
     const int getSegmentIndex(const double s, const std::vector<double>& cumDist) const;                          // ritorna l'indice del segmento rispetto alla distanza cumulativa
     void updateOptimalCurve();                                                                                    // calcola e disegna la curva ottima se abilitata
+    QList<QPointF> upsampleDrawnCurve(const int newNumPoints);
 
     // Attributi
     const std::string classTag = this->metaObject()->className(); // nome della classe
