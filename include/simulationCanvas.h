@@ -11,7 +11,6 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/beta.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
-#include <boost/math/interpolators/makima.hpp>
 #include <boost/math/interpolators/pchip.hpp>
 
 #include <QGraphicsView>

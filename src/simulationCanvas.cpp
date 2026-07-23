@@ -414,7 +414,6 @@ QList<QPointF> SimulationCanvas::upsampleDrawnCurve(const int newNumPoints) {
     return points;
   }
 
-  spdlog::debug("{} points:\n{}", logTag, pointsToString(points));
   std::vector<double> xValues, yValues;
   xValues.reserve(points.count());
   yValues.reserve(points.count());
