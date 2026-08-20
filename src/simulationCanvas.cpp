@@ -634,7 +634,7 @@ void SimulationCanvas::postProcessingCurve()
   qreal xMaxValue = viewport()->width() - threshold;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() > min && points[i].y() >= threshold && points[i].x() <= xMaxValue)
+    if (points[i].x() > min && points[i].y() >= 0 && points[i].x() <= xMaxValue)
     {
       processedPoints.append(points[i]);
       min = points[i].x();
@@ -762,10 +762,9 @@ void SimulationCanvas::updatePhysics()
   double sineOpt = 0.0;
   double u = gravity; // vettore d'ingresso u(k) = g
 
-  double sub_steps = 15.0;
-  double sub_dt = dt / sub_steps;
+  double sub_dt = dt / subSteps;
 
-  for (int i = 0; i < sub_steps; i++) {
+  for (int i = 0; i < subSteps; i++) {
     arma::mat A = { {1.0, sub_dt},
                     {0.0, 1} };
     arma::vec2 B = { 0.0, 0.0 };

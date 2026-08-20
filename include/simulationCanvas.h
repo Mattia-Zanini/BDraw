@@ -93,6 +93,7 @@ private:
     const int deltaTimeMilliseconds = 16;  // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
     const double deltaTimeSeconds = 0.016; // espresso in secondi
     const double maxTimeElapsed = 0.05; // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
+    const double subSteps = 15.0; // Sub-stepping per l'aggiornamento della fisica ad ogni frame grafico
 
     QGraphicsScene* scene;
     QPainterPath curve;
