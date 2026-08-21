@@ -77,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     QLabel *pathLabel = new QLabel("Curve predefinite:", leftPanel);
     QLabel *timeLabel = new QLabel("Tempo stimato: ---", leftPanel);
     QLabel *actualTimeLabel = new QLabel("Tempo effettivo: ---", leftPanel);
-    QLabel *bestTimeLabel = new QLabel("Tempo migliore: ---", leftPanel);
+    QLabel *bestTimeLabel = new QLabel("Tempo ottimo: ---", leftPanel);
     QLabel *bestActualTimeLabel = new QLabel("Ottimo effettivo: ---", leftPanel);
     QLabel *lengthLabel = new QLabel("Lunghezza: ---", leftPanel);
 
@@ -163,7 +163,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                            .arg(time, 0, 'f', 3));
 
                     double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
-                    bestTimeLabel->setText(QString("Tempo migliore: %1 s")
+                    bestTimeLabel->setText(QString("Tempo ottimo: %1 s")
                                                .arg(bestTimeVal, 0, 'f', 3));
                 }
             });
@@ -174,7 +174,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                 simulationCanvas->clearScene();
                 timeLabel->setText("Tempo stimato: ---");
                 actualTimeLabel->setText("Tempo effettivo: ---");
-                bestTimeLabel->setText("Tempo migliore: ---");
+                bestTimeLabel->setText("Tempo ottimo: ---");
                 bestActualTimeLabel->setText("Ottimo effettivo: ---");
                 lengthLabel->setText("Lunghezza: ---");
             });
@@ -193,7 +193,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
                                          .arg(length, 0, 'f', 2));
 
                 double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
-                bestTimeLabel->setText(QString("Tempo migliore: %1 s")
+                bestTimeLabel->setText(QString("Tempo ottimo: %1 s")
                                            .arg(bestTimeVal, 0, 'f', 3));
 
                 simulationCanvas->startSimulation();

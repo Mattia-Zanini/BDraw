@@ -746,7 +746,6 @@ void SimulationCanvas::startSimulation()
 
   // avvio i timer e il clock
   simulationClock->start(deltaTimeMilliseconds);
-  totalSimulationTime.start();
   elapsedTime.start();
 }
 
@@ -757,6 +756,8 @@ void SimulationCanvas::updatePhysics()
   // protezione contro lag improvvisi del sistema
   if (dt > maxTimeElapsed)
     dt = deltaTimeSeconds;
+
+  totSimulationSeconds += dt;
 
   double sine = 0.0;
   double sineOpt = 0.0;
@@ -772,8 +773,9 @@ void SimulationCanvas::updatePhysics()
     // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
     if (mainBallFinished == false) {
       sine = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
+      
       // B = { 0.0, dt * sine }; // B = [ 0, dt * seno ]^T
-      B = { sub_dt * sub_dt * sine, sub_dt * sine }; // B = [ 0, dt * seno ]^T
+      B = { sub_dt * sub_dt * sine, sub_dt * sine }; // B = [ dt^2 * seno, dt * seno ]^T
 
       // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
       state = A * state + B * u;
@@ -799,7 +801,6 @@ void SimulationCanvas::updatePhysics()
 
     spdlog::warn("{} Una delle palline è tornata indietro oltre l'inizio della curva, termino la simulazione", logTag);
     simulationClock->stop();
-    totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
     mainSimulationSeconds = totSimulationSeconds;
     optimalSimulationSeconds = totSimulationSeconds;
     emit simulationFinished();
@@ -828,15 +829,14 @@ void SimulationCanvas::updatePhysics()
     optimalBallFinished = (sOpt == LOpt); // considero l'avanzare sulla curva ottima solo se essa esiste
 
   if (mainBallFinished && mainSimulationSeconds == 0.0)
-    mainSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
+    mainSimulationSeconds = totSimulationSeconds;
 
   if (optimalBallFinished && optimalSimulationSeconds == 0.0)
-    optimalSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
+    optimalSimulationSeconds = totSimulationSeconds;
 
   if (mainBallFinished && optimalBallFinished) // fine della simulazione (hanno entrambe raggiunto la fine)
   {
     simulationClock->stop();
-    totSimulationSeconds = totalSimulationTime.elapsed() / 1000.0;
     spdlog::info("{} Simulazione terminata in {} s", logTag, totSimulationSeconds);
     emit simulationFinished();
   }

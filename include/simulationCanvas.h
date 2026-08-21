@@ -109,7 +109,6 @@ private:
     arma::vec2 stateOptimal;                       // stato del sistema ottimo
     QTimer* simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
-    QElapsedTimer totalSimulationTime;      // misura la durata totale dell'intera simulazione
     double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
     double mainSimulationSeconds;           // tempo impiegato dalla pallina principale
     double optimalSimulationSeconds;        // tempo impiegato dalla pallina ottima
