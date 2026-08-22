@@ -95,34 +95,34 @@ private:
     const double maxTimeElapsed = 0.05; // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
     const double subSteps = 15.0; // Sub-stepping per l'aggiornamento della fisica ad ogni frame grafico
 
-    QGraphicsScene* scene;
-    QPainterPath curve;
-    QPainterPath optimalPath;
-    QPen pen;
-    QGraphicsPathItem* curveItem;
-    QGraphicsEllipseItem* ballItem;
-    QGraphicsEllipseItem* ballOptimal;
-    QList<QPointF> points;
-    bool isUserDrawing;
-    double metersPerPixel;
+    QGraphicsScene* scene;                  // scena grafica principale che contiene tutti gli elementi visivi
+    QPainterPath curve;                     // percorso grafico (path) della curva disegnata dall'utente
+    QPainterPath optimalPath;               // percorso grafico della curva ottima (cicloide)
+    QPen pen;                               // penna usata per disegnare la curva principale
+    QGraphicsPathItem* curveItem;           // puntatore all'elemento grafico della curva principale nella scena
+    QGraphicsEllipseItem* ballItem;         // puntatore all'elemento grafico della pallina principale
+    QGraphicsEllipseItem* ballOptimal;      // puntatore all'elemento grafico della pallina ottima
+    QList<QPointF> points;                  // lista dei punti che compongono la curva disegnata
+    bool isUserDrawing;                     // flag che indica se l'utente sta attualmente disegnando a mano libera
+    double metersPerPixel;                  // fattore di conversione da pixel a metri
     arma::vec2 state;                       // stato del sistema
-    arma::vec2 stateOptimal;                       // stato del sistema ottimo
+    arma::vec2 stateOptimal;                // stato del sistema ottimo
     QTimer* simulationClock;                // è il timer che scatta ogni tot millisecondi per far progredire la simulazione
     QElapsedTimer elapsedTime;              // misura il tempo reale trascorso tra due frame successivi
     double totSimulationSeconds;            // durata totale della simulazione, espressa in secondi
     double mainSimulationSeconds;           // tempo impiegato dalla pallina principale
     double optimalSimulationSeconds;        // tempo impiegato dalla pallina ottima
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
-    std::vector<double> cumulativeDistanceOptimal;
-    QList<QPointF> optimalCurve;
-    QGraphicsPathItem* optimalCurveItem;
-    QPen bestPen;
-    bool showOptimal;
-    bool isCycloid;
-    int initWidth;
-    bool showTarget;
-    bool mainBallFinished;
-    bool optimalBallFinished;
+    std::vector<double> cumulativeDistanceOptimal; // contiene le distanze cumulative della curva ottima
+    QList<QPointF> optimalCurve;            // lista dei punti che compongono la curva ottima
+    QGraphicsPathItem* optimalCurveItem;    // puntatore all'elemento grafico della curva ottima nella scena
+    QPen bestPen;                           // penna usata per disegnare la curva ottima
+    bool showOptimal;                       // flag per mostrare o nascondere la curva ottima e la sua pallina
+    bool isCycloid;                         // flag che indica se la curva attualmente disegnata è una cicloide generata
+    int initWidth;                          // larghezza iniziale del canvas, usata per il ridimensionamento dei punti
+    bool showTarget;                        // flag per mostrare o nascondere il punto di arrivo (pallino rosso)
+    bool mainBallFinished;                  // flag che indica se la pallina principale ha raggiunto la destinazione
+    bool optimalBallFinished;               // flag che indica se la pallina ottima ha raggiunto la destinazione
 };
 
 #endif // SIMULATIONCANVAS_H
