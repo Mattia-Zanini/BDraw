@@ -66,7 +66,7 @@ private:
     void drawBackground(QPainter* painter, const QRectF& rect) override;
     void resizeEvent(QResizeEvent* event) override;
 
-    int getScaledSampleCount(int basePoints = 1000) const;                                                        // ritorna il numero di punti da campionare di una cruva, il valore scala linearmente con la dimensione della finestra
+    int getScaledSampleCount(int basePoints = 3000) const;                                                        // ritorna il numero di punti da campionare di una cruva, il valore scala linearmente con la dimensione della finestra
     const std::string pointToString(const QPointF& p) const;                                                      // converte un punto nel formato stringa "(x, y)" (DEBUG)
     const std::string pointsToString(const QList<QPointF>& pList) const;                                          // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
     void postProcessingCurve();                                                                                   // tolgo i punti che non rispettano la crescita monotona in X.
@@ -76,6 +76,7 @@ private:
     void computeCumulativeDistance(const QList<QPointF>& pts, std::vector<double>& cumDist);                      // calcola le distanze cumulative dei segmenti della curva
     QList<QPointF> generateCycloidPoints(const QPointF& target, const QPointF& startPoint = QPointF(0, 0)) const; // genera i punti di una cicloide che termina sul target
     void updatePhysics();                                                                                         // esegue l'integrazione numerica dello stato della pallina
+    void stepSymplecticEuler(const double inputValue, double& sineValue, double& sineOptimal);
     void updateBallPosition(const double s, QGraphicsEllipseItem* ball, const QPainterPath& path, const QList<QPointF>& pts, const std::vector<double>& cumDist);  // aggiorna la posizione grafica della pallina sulla curva
     const double clampDistance(const double s, const std::vector<double>& cumDist) const;                         // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
     const int getSegmentIndex(const double s, const std::vector<double>& cumDist) const;                          // ritorna l'indice del segmento rispetto alla distanza cumulativa
@@ -88,12 +89,12 @@ private:
     const double gravity = 9.81;
     const double threshold = 1e-6;      // soglia minima per le operazioni
     const double minMoveDistance = 1.0; // distanza minima fra un campione e l'altro (del disegno libero)
-    const int margin = 40;              // margine dai bordi della scena
+    const int margin = 30;              // margine dai bordi della scena
     const int ballRadius = 6;
     const int deltaTimeMilliseconds = 16;  // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
     const double deltaTimeSeconds = 0.016; // espresso in secondi
     const double maxTimeElapsed = 0.05; // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
-    const double subSteps = 15.0; // Sub-stepping per l'aggiornamento della fisica ad ogni frame grafico
+    const double fixedSubDT = 0.0041666667; // 4.2 ms (240 Hz)
 
     QGraphicsScene* scene;                  // scena grafica principale che contiene tutti gli elementi visivi
     QPainterPath curve;                     // percorso grafico (path) della curva disegnata dall'utente
@@ -114,7 +115,7 @@ private:
     double optimalSimulationSeconds;        // tempo impiegato dalla pallina ottima
     std::vector<double> cumulativeDistance; // contiene le distanze cumulative della curva
     std::vector<double> cumulativeDistanceOptimal; // contiene le distanze cumulative della curva ottima
-    QList<QPointF> optimalCurve;            // lista dei punti che compongono la curva ottima
+    QList<QPointF> optimalCurvePoints;            // lista dei punti che compongono la curva ottima
     QGraphicsPathItem* optimalCurveItem;    // puntatore all'elemento grafico della curva ottima nella scena
     QPen bestPen;                           // penna usata per disegnare la curva ottima
     bool showOptimal;                       // flag per mostrare o nascondere la curva ottima e la sua pallina
@@ -123,6 +124,7 @@ private:
     bool showTarget;                        // flag per mostrare o nascondere il punto di arrivo (pallino rosso)
     bool mainBallFinished;                  // flag che indica se la pallina principale ha raggiunto la destinazione
     bool optimalBallFinished;               // flag che indica se la pallina ottima ha raggiunto la destinazione
+    double physicsAccumulator;
 };
 
 #endif // SIMULATIONCANVAS_H

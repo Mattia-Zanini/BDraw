@@ -57,6 +57,7 @@ SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent)
 
   metersPerPixel = 0.01;
   totSimulationSeconds = 0.0;
+  physicsAccumulator = 0.0;
   simulationClock = new QTimer(this);
   initWidth = 0; // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
 
@@ -135,7 +136,7 @@ void SimulationCanvas::setShowOptimal(bool show)
 void SimulationCanvas::updateOptimalCurve()
 {
   cumulativeDistanceOptimal.clear();
-  optimalCurve.clear();
+  optimalCurvePoints.clear();
   optimalPath.clear();
 
   if (hasCurve() == false)
@@ -148,9 +149,9 @@ void SimulationCanvas::updateOptimalCurve()
   }
 
   QPointF target = getEndPoint();
-  optimalCurve = generateCycloidPoints(target, points.first());
+  optimalCurvePoints = generateCycloidPoints(target, points.first());
 
-  if (optimalCurve.isEmpty()) {
+  if (optimalCurvePoints.isEmpty()) {
     if (optimalCurveItem)
       optimalCurveItem->hide();
 
@@ -158,11 +159,11 @@ void SimulationCanvas::updateOptimalCurve()
     return;
   }
 
-  computeCumulativeDistance(optimalCurve, cumulativeDistanceOptimal);
+  computeCumulativeDistance(optimalCurvePoints, cumulativeDistanceOptimal);
 
-  optimalPath.moveTo(optimalCurve.first());
-  for (int i = 1; i < optimalCurve.size(); ++i)
-    optimalPath.lineTo(optimalCurve[i]);
+  optimalPath.moveTo(optimalCurvePoints.first());
+  for (int i = 1; i < optimalCurvePoints.size(); ++i)
+    optimalPath.lineTo(optimalCurvePoints[i]);
 
 
   if (optimalCurveItem)
@@ -247,7 +248,7 @@ QList<QPointF> SimulationCanvas::generateCycloidPoints(const QPointF& target, co
   }
 
   // (STEP 3) GENERAZIONE DEI PUNTI DELLA CURVA
-  int numPoints = 50;
+  int numPoints = getScaledSampleCount();
   cycloidPoints.reserve(numPoints);
   cycloidPoints.append(startPoint);
 
@@ -278,9 +279,9 @@ const std::string SimulationCanvas::pointsToString(const QList<QPointF>& pList) 
 {
   QString result = QString("");
 
-  for (QPointF p : pList)
+  for (int i = 0; i < pList.count(); i++)
   {
-    result += pointToString(p);
+    result += QString("[%1]: ").arg(i).toStdString() + pointToString(pList[i]);
     result += "\n";
   }
 
@@ -296,12 +297,13 @@ const double SimulationCanvas::applyScale(const double pixels) const
 void SimulationCanvas::clearScene()
 {
   points.clear();
-  optimalCurve.clear();
+  optimalCurvePoints.clear();
   isCycloid = false;
   simulationClock->stop();
   totSimulationSeconds = 0.0;
   mainSimulationSeconds = 0.0;
   optimalSimulationSeconds = 0.0;
+  physicsAccumulator = 0.0;
   cumulativeDistance.clear();
   cumulativeDistanceOptimal.clear();
 
@@ -632,9 +634,10 @@ void SimulationCanvas::postProcessingCurve()
 
   qreal min = 0;
   qreal xMaxValue = viewport()->width() - threshold;
+  qreal negMargin = -1 * margin;
   for (int i = 1; i < points.size(); i++)
   {
-    if (points[i].x() > min && points[i].y() >= 0 && points[i].x() <= xMaxValue)
+    if (points[i].x() > min && points[i].y() >= negMargin && points[i].x() <= xMaxValue)
     {
       processedPoints.append(points[i]);
       min = points[i].x();
@@ -730,8 +733,8 @@ void SimulationCanvas::startSimulation()
   updateBallPosition(0.0, ballItem, curve, points, cumulativeDistance);
 
   // se vengono disegnate curve che hanno il punto finale più in alto del punto iniziale allora la cicloide non viene generata.
-  if (!optimalCurve.isEmpty()) {
-    updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+  if (!optimalCurvePoints.isEmpty()) {
+    updateBallPosition(0.0, ballOptimal, optimalPath, optimalCurvePoints, cumulativeDistanceOptimal);
     optimalBallFinished = false;
   }
   else
@@ -742,7 +745,12 @@ void SimulationCanvas::startSimulation()
   totSimulationSeconds = 0.0;
   mainSimulationSeconds = 0.0;
   optimalSimulationSeconds = 0.0;
+  physicsAccumulator = 0.0;
   double curveTotalLength = cumulativeDistance.back();
+
+  spdlog::debug("{} Dati inerenti alle curve", logTag);
+  spdlog::debug("{} Punti della curva custom da simulare:\n{}", logTag, pointsToString(points));
+  spdlog::debug("{} Punti della curva ottima:\n{}", logTag, pointsToString(optimalCurvePoints));
 
   // avvio i timer e il clock
   simulationClock->start(deltaTimeMilliseconds);
@@ -751,47 +759,26 @@ void SimulationCanvas::startSimulation()
 
 void SimulationCanvas::updatePhysics()
 {
-  double dt = elapsedTime.restart() / 1000.0; // calcolo del delta-time reale, in secondi
+  double frameTime = elapsedTime.restart() / 1000.0; // calcolo del delta-time reale, in secondi
 
-  // protezione contro lag improvvisi del sistema
-  if (dt > maxTimeElapsed)
-    dt = deltaTimeSeconds;
+  // protezione contro lag improvvisi del sistema (visivamente)
+  if (frameTime > maxTimeElapsed)
+    frameTime = deltaTimeSeconds;
 
-  totSimulationSeconds += dt;
+  physicsAccumulator += frameTime;
 
   double sine = 0.0;
   double sineOpt = 0.0;
-  double u = gravity; // vettore d'ingresso u(k) = g
 
-  double sub_dt = dt / subSteps;
-
-  for (int i = 0; i < subSteps; i++) {
-    arma::mat A = { {1.0, sub_dt},
-                    {0.0, 1} };
-    arma::vec2 B = { 0.0, 0.0 };
-
-    // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
-    if (mainBallFinished == false) {
-      sine = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
-      
-      // B = { 0.0, dt * sine }; // B = [ 0, dt * seno ]^T
-      B = { sub_dt * sub_dt * sine, sub_dt * sine }; // B = [ dt^2 * seno, dt * seno ]^T
-
-      // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
-      state = A * state + B * u;
-    }
-
-    // AGGIORNO LO STATO DEL PERCORSO OTTIMO
-    if (optimalBallFinished == false) {
-      sineOpt = getSineAt(clampDistance(stateOptimal(0), cumulativeDistanceOptimal), cumulativeDistanceOptimal, optimalCurve);
-      // B = { 0.0, dt * sineOpt };
-      B = { sub_dt * sub_dt * sineOpt, sub_dt * sineOpt };
-      stateOptimal = A * stateOptimal + B * u;
-    }
+  // Consuma il tempo a passi RIGIDAMENTE FISSI e COSTANTI
+  while(physicsAccumulator >= fixedSubDT) {
+    stepSymplecticEuler(gravity, sine, sineOpt);
+    physicsAccumulator -= fixedSubDT;
+    totSimulationSeconds += fixedSubDT;
   }
 
   bool illegalStateMain = state(0) < -0.01;
-  bool illegalStateOptimal = (!optimalCurve.isEmpty()) ? (stateOptimal(0) < -0.01) : false;
+  bool illegalStateOptimal = (!optimalCurvePoints.isEmpty()) ? (stateOptimal(0) < -0.01) : false;
 
   // se la pallina torna indietro oltre l'inizio della curva termino la simulazione
   if (illegalStateMain || illegalStateOptimal)
@@ -814,18 +801,18 @@ void SimulationCanvas::updatePhysics()
 
   double sOpt = 0.0;
   double LOpt = 0.0;
-  if (!optimalCurve.isEmpty()) {
+  if (!optimalCurvePoints.isEmpty()) {
     stateOptimal(0) = clampDistance(stateOptimal(0), cumulativeDistanceOptimal);
     sOpt = stateOptimal(0);
     LOpt = cumulativeDistanceOptimal.back();
-    updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurve, cumulativeDistanceOptimal);
+    updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurvePoints, cumulativeDistanceOptimal);
   }
 
   spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
   spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
 
   mainBallFinished = (s == L);
-  if (!optimalCurve.isEmpty())
+  if (!optimalCurvePoints.isEmpty())
     optimalBallFinished = (sOpt == LOpt); // considero l'avanzare sulla curva ottima solo se essa esiste
 
   if (mainBallFinished && mainSimulationSeconds == 0.0)
@@ -839,6 +826,32 @@ void SimulationCanvas::updatePhysics()
     simulationClock->stop();
     spdlog::info("{} Simulazione terminata in {} s", logTag, totSimulationSeconds);
     emit simulationFinished();
+  }
+}
+
+void SimulationCanvas::stepSymplecticEuler(const double inputValue, double& sineValue, double& sineOptimal) {
+  arma::mat A = { {1.0, fixedSubDT},
+                  {0.0, 1} };
+  arma::vec2 B = { 0.0, 0.0 };
+  // vettore d'ingresso: inputValue = u(k) = u = gravity
+
+  // AGGIORNO LO STATO DEL DISEGNO DELL'UTENTE
+  if (mainBallFinished == false) {
+    sineValue = getSineAt(clampDistance(state(0), cumulativeDistance), cumulativeDistance, points); // sin(s(k))
+
+    // B = { 0.0, dt * sineValue }; // B = [ 0, dt * sineValue ]^T
+    B = { fixedSubDT * fixedSubDT * sineValue, fixedSubDT * sineValue }; // B = [ dt^2 * sineValue, dt * sineValue ]^T
+
+    // aggiorno lo stato del sistema, calcolo x(k + 1) = A * x(k) + B * u(k)
+    state = A * state + B * inputValue;
+  }
+
+  // AGGIORNO LO STATO DEL PERCORSO OTTIMO
+  if (optimalBallFinished == false) {
+    sineOptimal = getSineAt(clampDistance(stateOptimal(0), cumulativeDistanceOptimal), cumulativeDistanceOptimal, optimalCurvePoints);
+    // B = { 0.0, dt * sineOptimal };
+    B = { fixedSubDT * fixedSubDT * sineOptimal, fixedSubDT * sineOptimal };
+    stateOptimal = A * stateOptimal + B * inputValue;
   }
 }
 

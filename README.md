@@ -123,22 +123,67 @@ Scegli una cartella nel tuo sistema (es. la tua cartella home) e installa vcpkg:
 
 Per maggiori dettagli su vcpkg, consulta anche [VCPKG_GUIDE.md](VCPKG_GUIDE.md).
 
-#### 2. Integrazione con gli IDE
+#### 2. Modalità di Installazione: Manifest (Default) vs Classic Mode (Globale con Linking Statico)
+
+Il progetto supporta due modalità di utilizzo di `vcpkg`:
+
+* **Modalità Manifest (Default)**: le dipendenze sono dichiarate nel file `vcpkg.json`. Durante la prima configurazione di CMake, vcpkg scaricherà e compilerà tutto localmente all'interno della cartella `vcpkg_installed/` del progetto.
+* **Modalità Classica (Globale con Linking Statico)**: ideale per chi preferisce installare le librerie una sola volta a livello globale nel sistema, riutilizzarle in più progetti e incorporarle nell'eseguibile evitando copie di DLL/librerie nella cartella `build/`.
+
+##### Installazione Globale delle Dipendenze (Classic Mode)
+Dalla cartella in cui hai installato `vcpkg`, esegui:
+
+* **Su macOS (Apple Silicon)**:
+  ```bash
+  $VCPKG_ROOT/vcpkg install spdlog armadillo boost --triplet arm64-osx
+  ```
+  *(Su Mac con processore Intel sostituisci `arm64-osx` con `x64-osx`)*.
+
+* **Su Windows (con compilatore MSVC)**:
+  ```powershell
+  & "$env:VCPKG_ROOT\vcpkg.exe" install spdlog armadillo boost openblas --triplet x64-windows-static-md
+  ```
+  > [!TIP]
+  > Il triplet `x64-windows-static-md` compila le librerie in formato statico (`.lib`) ma con runtime C/C++ dinamico (`/MD`), garantendo la piena compatibilità con i binari ufficiali di Qt6 senza causare conflitti `LNK2038`.
+
+* **Su Linux (Ubuntu)**:
+  ```bash
+  $VCPKG_ROOT/vcpkg install spdlog armadillo boost openblas --triplet x64-linux
+  ```
+
+#### 3. Integrazione con gli IDE
 
 ##### Visual Studio Code (CMake Tools)
 Installa l'estensione **CMake Tools** e aggiungi la configurazione al file `.vscode/settings.json` del workspace. 
 Specifica `CMAKE_TOOLCHAIN_FILE` e `CMAKE_PREFIX_PATH` (per indicare a CMake dove trovare Qt6 installato da Homebrew o aqtinstall):
-```json
-{
-    "cmake.configureSettings": {
-        "CMAKE_TOOLCHAIN_FILE": "/Users/TUO_UTENTE/vcpkg/scripts/buildsystems/vcpkg.cmake", // Sostituisci col tuo percorso reale o usa "${env:VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/qt" // Modifica in base al percorso della tua installazione di Qt (es. per Homebrew su Mac)
-    }
-}
-```
+
+* **Configurazione Standard (Manifest Mode - Default)**:
+  ```json
+  {
+      "cmake.configureSettings": {
+          "CMAKE_TOOLCHAIN_FILE": "/Users/TUO_UTENTE/vcpkg/scripts/buildsystems/vcpkg.cmake",
+          "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/qt"
+      }
+  }
+  ```
+
+* **Configurazione Globale con Linking Statico (Classic Mode)**:
+  Aggiungi le chiavi `VCPKG_MANIFEST_MODE` e `VCPKG_TARGET_TRIPLET`:
+  ```json
+  {
+      "cmake.configureSettings": {
+          "CMAKE_TOOLCHAIN_FILE": "/Users/TUO_UTENTE/vcpkg/scripts/buildsystems/vcpkg.cmake",
+          "CMAKE_PREFIX_PATH": "/opt/homebrew/opt/qt",
+          "VCPKG_MANIFEST_MODE": false,
+          "VCPKG_TARGET_TRIPLET": "arm64-osx"
+      }
+  }
+  ```
+  *(Su Windows imposta `"VCPKG_TARGET_TRIPLET": "x64-windows-static-md"`)*.
 
 ##### Qt Creator
 Apri il file `CMakeLists.txt`. Nelle impostazioni del progetto alla voce *CMake configuration*, aggiungi la variabile di tipo percorso chiamata `CMAKE_TOOLCHAIN_FILE` puntandola a `<percorso_a_vcpkg>/scripts/buildsystems/vcpkg.cmake`. Aggiungi anche `CMAKE_PREFIX_PATH` di tipo percorso puntandolo alla cartella di Qt6 installata.
+*(Se desideri usare la Classic Mode, aggiungi anche la variabile booleana `VCPKG_MANIFEST_MODE=OFF` e la variabile stringa `VCPKG_TARGET_TRIPLET=<tuo_triplet>`)*.
 
 ---
 
@@ -204,6 +249,30 @@ Apri il file `CMakeLists.txt`. Nelle impostazioni del progetto alla voce *CMake 
     # Compila
     cmake --build build -j 8
     ```
+
+* **Esempio di compilazione in Classic Mode (Globale + Linking Statico)**:
+  Se hai installato i pacchetti a livello globale e vuoi evitare la cartella `vcpkg_installed/`, aggiungi i flag `-DVCPKG_MANIFEST_MODE=OFF` e `-DVCPKG_TARGET_TRIPLET`:
+  ```bash
+  # macOS (Homebrew + Apple Silicon)
+  cmake -B build -S . -G Ninja \
+    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+    -DCMAKE_PREFIX_PATH="/opt/homebrew/opt/qt" \
+    -DVCPKG_MANIFEST_MODE=OFF \
+    -DVCPKG_TARGET_TRIPLET=arm64-osx \
+    -DCMAKE_BUILD_TYPE=Debug
+
+  cmake --build build -j 8
+  ```
+  ```cmd
+  :: Windows (MSVC)
+  cmake -B build -S . ^
+    -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake" ^
+    -DCMAKE_PREFIX_PATH="C:/Qt/6.10.0/msvc2022_64" ^
+    -DVCPKG_MANIFEST_MODE=OFF ^
+    -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+
+  cmake --build build --config Debug
+  ```
 
 #### 2. Tramite VS Code (estensione CMake Tools)
 Se hai completato la **FASE 2**, ti basta:
