@@ -47,7 +47,7 @@ public:
   const double getCurveLength() const;                                                // ritorna la lunghezza totale della curva in metri
   const QPointF getEndPoint() const;                                                  // ritorna l'ultimo punto della curva corrente
   const double computeBestTheoreticalTime(const QPointF& target) const;               // calcola il tempo teorico della cicloide passante per il target
-  void drawCurveFromFormula(const QString& formulaStr);
+  void drawCurveFromFormula(const QString& formulaStr);                               // disegna la curva generata da una formula matematica
 
 signals:
   void drawingFinished();    // segnala è terminato il disegno
@@ -58,42 +58,42 @@ public slots:
   void setShowOptimal(bool show); // imposta la visibilità della curva ottimale
 
 private:
-  // Metodi per gestire gli eventi del mouse
-  void mousePressEvent(QMouseEvent* event) override;
-  void mouseMoveEvent(QMouseEvent* event) override;
-  void mouseReleaseEvent(QMouseEvent* event) override;
-  void drawBackground(QPainter* painter, const QRectF& rect) override;
-  void resizeEvent(QResizeEvent* event) override;
+  // Metodi per gestire gli eventi del mouse e della finestra
+  void mousePressEvent(QMouseEvent* event) override;                   // gestisce la pressione del mouse per iniziare il tracciamento
+  void mouseMoveEvent(QMouseEvent* event) override;                    // gestisce il movimento del mouse durante il tracciamento
+  void mouseReleaseEvent(QMouseEvent* event) override;                 // gestisce il rilascio del mouse al termine del tracciamento
+  void drawBackground(QPainter* painter, const QRectF& rect) override; // disegna lo sfondo e l'eventuale punto di arrivo (target)
+  void resizeEvent(QResizeEvent* event) override;                      // gestisce il ridimensionamento della finestra
 
-  int getScaledSampleCount(int basePoints = 3000) const;                                                        // ritorna il numero di punti da campionare di una cruva, il valore scala linearmente con la dimensione della finestra
-  const std::string pointToString(const QPointF& p) const;                                                      // converte un punto nel formato stringa "(x, y)" (DEBUG)
-  const std::string pointsToString(const QList<QPointF>& pList) const;                                          // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
-  void postProcessingCurve();                                                                                   // tolgo i punti che non rispettano la crescita monotona in X.
-  const double applyScale(const double pixels) const;                                                           // Converte un valore da pixel a metri basandosi sulla scala impostata
-  const double getScaledPointsDistance(const QPointF& p1, const QPointF& p2) const;                             // calcola la distanza euclidea fra 2 punti
-  const double getSineAt(const double s, const std::vector<double>& cumDist, const QList<QPointF>& pts) const;  // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
-  void computeCumulativeDistance(const QList<QPointF>& pts, std::vector<double>& cumDist);                      // calcola le distanze cumulative dei segmenti della curva
-  QList<QPointF> generateCycloidPoints(const QPointF& target, const QPointF& startPoint = QPointF(0, 0)) const; // genera i punti di una cicloide che termina sul target
-  void updatePhysics();                                                                                         // esegue l'integrazione numerica dello stato della pallina
-  void stepSymplecticEuler(const double inputValue, double& sineValue, double& sineOptimal);
+  int getScaledSampleCount(int basePoints = 3000) const;                                                                                                        // ritorna il numero di punti da campionare di una cruva, il valore scala linearmente con la dimensione della finestra
+  const std::string pointToString(const QPointF& p) const;                                                                                                      // converte un punto nel formato stringa "(x, y)" (DEBUG)
+  const std::string pointsToString(const QList<QPointF>& pList) const;                                                                                          // scrive come lista, su ogni riga, il punto (x, y) in stringa (DEBUG)
+  void postProcessingCurve();                                                                                                                                   // tolgo i punti che non rispettano la crescita monotona in X.
+  const double applyScale(const double pixels) const;                                                                                                           // Converte un valore da pixel a metri basandosi sulla scala impostata
+  const double getScaledPointsDistance(const QPointF& p1, const QPointF& p2) const;                                                                             // calcola la distanza euclidea fra 2 punti
+  const double getSineAt(const double s, const std::vector<double>& cumDist, const QList<QPointF>& pts) const;                                                  // ritorna il seno dell'inclinazione del segmento corrente in cui si trova la pallina
+  void computeCumulativeDistance(const QList<QPointF>& pts, std::vector<double>& cumDist);                                                                      // calcola le distanze cumulative dei segmenti della curva
+  QList<QPointF> generateCycloidPoints(const QPointF& target, const QPointF& startPoint = QPointF(0, 0)) const;                                                 // genera i punti di una cicloide che termina sul target
+  void updatePhysics();                                                                                                                                         // esegue l'integrazione numerica dello stato della pallina
+  void stepSymplecticEuler(const double inputValue, double& sineValue, double& sineOptimal);                                                                    // esegue un singolo passo di integrazione con il metodo di Eulero simplettico
   void updateBallPosition(const double s, QGraphicsEllipseItem* ball, const QPainterPath& path, const QList<QPointF>& pts, const std::vector<double>& cumDist); // aggiorna la posizione grafica della pallina sulla curva
   const double clampDistance(const double s, const std::vector<double>& cumDist) const;                                                                         // ritorna il valore della distanza in modo che rispetti il dominio [0, L]
   const int getSegmentIndex(const double s, const std::vector<double>& cumDist) const;                                                                          // ritorna l'indice del segmento rispetto alla distanza cumulativa
   void updateOptimalCurve();                                                                                                                                    // calcola e disegna la curva ottima se abilitata
-  QList<QPointF> upsampleDrawnCurve(const int newNumPoints);
+  QList<QPointF> upsampleDrawnCurve(const int newNumPoints);                                                                                                    // interpola la curva disegnata per raggiungere un numero fisso di campioni
 
   // Attributi
   const std::string classTag = this->metaObject()->className(); // nome della classe
-  const std::string logTag = "[" + classTag + "]";
-  const double gravity = 9.81;
-  const double threshold = 1e-6;      // soglia minima per le operazioni
-  const double minMoveDistance = 1.0; // distanza minima fra un campione e l'altro (del disegno libero)
-  const int margin = 30;              // margine dai bordi della scena
-  const int ballRadius = 6;
-  const int deltaTimeMilliseconds = 16;             // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
-  const double deltaTimeSeconds = 0.016;            // espresso in secondi
-  const double maxTimeElapsed = 0.05;               // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
-  const double fixedSubDT = 0.00416666666666666666; // 4.2 ms (240 Hz)
+  const std::string logTag = "[" + classTag + "]";              // prefisso identificativo per i messaggi di log
+  const double gravity = 9.81;                                  // accelerazione di gravità (m/s^2)
+  const double threshold = 1e-6;                                // soglia minima per le operazioni
+  const double minMoveDistance = 1.0;                           // distanza minima fra un campione e l'altro (del disegno libero)
+  const int margin = 30;                                        // margine dai bordi della scena
+  const int ballRadius = 6;                                     // raggio grafico dei gravi in pixel
+  const int deltaTimeMilliseconds = 16;                         // millisecondi tra un frame e il successivo, 16 ms ~= 60 FPS
+  const double deltaTimeSeconds = 0.016;                        // espresso in secondi
+  const double maxTimeElapsed = 0.05;                           // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
+  const double fixedSubDT = 0.00416666666666666666;             // ~4.2 ms (240 Hz)
 
   QGraphicsScene* scene;                         // scena grafica principale che contiene tutti gli elementi visivi
   QPainterPath curve;                            // percorso grafico (path) della curva disegnata dall'utente
@@ -123,7 +123,7 @@ private:
   bool showTarget;                               // flag per mostrare o nascondere il punto di arrivo (pallino rosso)
   bool mainBallFinished;                         // flag che indica se la pallina principale ha raggiunto la destinazione
   bool optimalBallFinished;                      // flag che indica se la pallina ottima ha raggiunto la destinazione
-  double physicsAccumulator;
+  double physicsAccumulator;                     // accumulatore temporale per il passo fisso della fisica
 };
 
 #endif // SIMULATIONCANVAS_H
