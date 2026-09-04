@@ -6,29 +6,27 @@
 // indica come Qt incapsula le dichiarazioni nel suo namespace
 // (può essere vuoto o namespace Qt { ... } a seconda delle impostazioni di build).
 QT_BEGIN_NAMESPACE
-namespace Ui
-{
-    class MainWindow;
+namespace Ui {
+  class MainWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
-{
-    // attiva il sistema meta-object (MOC) di Qt
-    // (signal/slot, proprietà, introspezione runtime) per la classe.
-    Q_OBJECT
+class MainWindow : public QMainWindow {
+  // attiva il sistema meta-object (MOC) di Qt
+  // (signal/slot, proprietà, introspezione runtime) per la classe.
+  Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override;
+  explicit MainWindow(QWidget* parent = nullptr);
+  ~MainWindow() override;
 
 private:
-    const std::string TAG = this->metaObject()->className(); // nome della classe
-    const std::string stdTAG = "[" + TAG + "]";
-    const int initWindowWidth = 854;
-    const int initWindowHeigth = 680;
-    const int controlPanelWidth = 220;
+  const std::string TAG = this->metaObject()->className(); // nome della classe
+  const std::string stdTAG = "[" + TAG + "]";
+  const int initWindowWidth = 854;
+  const int initWindowHeigth = 680;
+  const int controlPanelWidth = 220;
 
-    Ui::MainWindow *ui;
+  Ui::MainWindow* ui;
 };
 #endif // MAINWINDOW_H

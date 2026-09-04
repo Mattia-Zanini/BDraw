@@ -13,80 +13,75 @@
 // (qDebug, qWarning, ecc.) e li ridirige verso spdlog.
 void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 
-int main(int argc, char* argv[])
-{
-    // Crea un logger per la console che supporta i colori
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+int main(int argc, char* argv[]) {
+  // Crea un logger per la console che supporta i colori
+  auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
-    // rotating_file_sink_mt(nome_file, dimensione_massima_in_byte, numero_massimo_di_file, rotate_on_open)
-    // - Mantiene fino a 10 storici (log.1.txt, log.2.txt...)
-    // - "true" finale forza la rotazione ad ogni nuovo avvio dell'app (file pulito per ogni sessione)
-    auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("log.txt", 1024 * 1024 * 5, 3, true);
+  // rotating_file_sink_mt(nome_file, dimensione_massima_in_byte, numero_massimo_di_file, rotate_on_open)
+  // - Mantiene fino a 10 storici (log.1.txt, log.2.txt...)
+  // - "true" finale forza la rotazione ad ogni nuovo avvio dell'app (file pulito per ogni sessione)
+  auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>("log.txt", 1024 * 1024 * 5, 3, true);
 
-    // Imposta il livello del file sink a DEBUG in modo da registrare sempre tutti i dettagli
-    file_sink->set_level(spdlog::level::debug);
+  // Imposta il livello del file sink a DEBUG in modo da registrare sempre tutti i dettagli
+  file_sink->set_level(spdlog::level::debug);
 
-    // Imposta il livello della console a seconda della modalità di compilazione
+  // Imposta il livello della console a seconda della modalità di compilazione
 #if defined(NDEBUG) || defined(QT_NO_DEBUG)
-    console_sink->set_level(spdlog::level::info);
+  console_sink->set_level(spdlog::level::info);
 #else
-    console_sink->set_level(spdlog::level::debug);
+  console_sink->set_level(spdlog::level::debug);
 #endif
 
-    std::vector<spdlog::sink_ptr> sinks{ console_sink, file_sink };
-    auto logger = std::make_shared<spdlog::logger>("multi_logger", sinks.begin(), sinks.end());
+  std::vector<spdlog::sink_ptr> sinks{ console_sink, file_sink };
+  auto logger = std::make_shared<spdlog::logger>("multi_logger", sinks.begin(), sinks.end());
 
-    // Imposta il livello del logger globale a DEBUG per permettere ai singoli sink di filtrare i messaggi
-    logger->set_level(spdlog::level::debug);
-    spdlog::set_default_logger(logger);
+  // Imposta il livello del logger globale a DEBUG per permettere ai singoli sink di filtrare i messaggi
+  logger->set_level(spdlog::level::debug);
+  spdlog::set_default_logger(logger);
 
-    // Configura il pattern di spdlog: %^ e %$ racchiudono la parte del messaggio che deve 
-    // essere colorata in base al livello (es. INFO in verde, WARN in giallo, ERROR in rosso).
-    spdlog::set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
+  // Configura il pattern di spdlog: %^ e %$ racchiudono la parte del messaggio che deve
+  // essere colorata in base al livello (es. INFO in verde, WARN in giallo, ERROR in rosso).
+  spdlog::set_pattern("[%H:%M:%S.%e] [%^%l%$] %v");
 
-    // Installa il gestore dei messaggi personalizzato
-    qInstallMessageHandler(qtMessageHandler);
+  // Installa il gestore dei messaggi personalizzato
+  qInstallMessageHandler(qtMessageHandler);
 
-    QApplication a(argc, argv);
+  QApplication a(argc, argv);
 
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString& locale : uiLanguages)
-    {
-        const QString baseName = "BDraw_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName))
-        {
-            a.installTranslator(&translator);
-            break;
-        }
+  QTranslator translator;
+  const QStringList uiLanguages = QLocale::system().uiLanguages();
+  for (const QString& locale : uiLanguages) {
+    const QString baseName = "BDraw_" + QLocale(locale).name();
+    if (translator.load(":/i18n/" + baseName)) {
+      a.installTranslator(&translator);
+      break;
     }
+  }
 
-    MainWindow w;
-    w.show();
+  MainWindow w;
+  w.show();
 
-    return QCoreApplication::exec();
+  return QCoreApplication::exec();
 }
 
-void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg)
-{
-    std::string message = msg.toStdString();
+void qtMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg) {
+  std::string message = msg.toStdString();
 
-    switch (type)
-    {
-    case QtDebugMsg:
-        spdlog::debug(message);
-        break;
-    case QtInfoMsg:
-        spdlog::info(message);
-        break;
-    case QtWarningMsg:
-        spdlog::warn(message);
-        break;
-    case QtCriticalMsg:
-        spdlog::error(message);
-        break;
-    case QtFatalMsg:
-        spdlog::critical(message);
-        abort();
-    }
+  switch (type) {
+  case QtDebugMsg:
+    spdlog::debug(message);
+    break;
+  case QtInfoMsg:
+    spdlog::info(message);
+    break;
+  case QtWarningMsg:
+    spdlog::warn(message);
+    break;
+  case QtCriticalMsg:
+    spdlog::error(message);
+    break;
+  case QtFatalMsg:
+    spdlog::critical(message);
+    abort();
+  }
 }
