@@ -715,8 +715,10 @@ void SimulationCanvas::updatePhysics() {
     updateBallPosition(sOpt, ballOptimal, optimalPath, optimalCurvePoints, cumulativeDistanceOptimal);
   }
 
-  spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
-  spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
+  if (mainBallFinished == false)
+    spdlog::debug("{} x(k + 1) = [{}, {}]^T , sine: {}", logTag, state(0), state(1), sine);
+  if (optimalBallFinished == false)
+    spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
 
   mainBallFinished = (s == L);
   if (!optimalCurvePoints.isEmpty())
