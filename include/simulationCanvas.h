@@ -116,7 +116,7 @@ private:
   QList<QPointF> optimalCurvePoints{};             // lista dei punti che compongono la curva ottima
   QGraphicsPathItem* optimalCurveItem = nullptr;   // puntatore all'elemento grafico della curva ottima nella scena
   QPen bestPen{};                                  // penna usata per disegnare la curva ottima
-  double metersPerPixel = 0.01;                     // fattore di conversione da pixel a metri
+  double metersPerPixel = 0.01;                    // fattore di conversione da pixel a metri
   bool showOptimal = false;                        // flag per mostrare o nascondere la curva ottima e la sua pallina
   bool isCycloid = false;                          // flag che indica se la curva attualmente disegnata è una cicloide generata
   int initWidth = 0;                               // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
