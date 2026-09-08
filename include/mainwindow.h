@@ -27,6 +27,6 @@ private:
   const int initWindowHeigth = 680;
   const int controlPanelWidth = 220;
 
-  Ui::MainWindow* ui;
+  Ui::MainWindow* ui = nullptr;
 };
 #endif // MAINWINDOW_H

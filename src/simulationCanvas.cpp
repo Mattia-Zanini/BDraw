@@ -26,20 +26,12 @@ SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent) {
   setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
   // init delle variabili
-  isUserDrawing = false;
   pen = QPen(Qt::blue);
   pen.setWidthF(2.5);
   bestPen = QPen(QColor(0, 152, 13));
   bestPen.setWidthF(2.5);
   state = arma::vec2(arma::fill::zeros);
-  curveItem = nullptr;
-  optimalCurveItem = nullptr;
-  showOptimal = false;
-  isCycloid = false;
   curve = QPainterPath();
-  showTarget = false;
-  mainBallFinished = false;
-  optimalBallFinished = false;
 
   ballItem = new QGraphicsEllipseItem(0, 0, ballRadius * 2, ballRadius * 2);
   ballItem->setBrush(QBrush(Qt::white)); // Pallina bianca
@@ -53,11 +45,7 @@ SimulationCanvas::SimulationCanvas(QWidget* parent) : QGraphicsView(parent) {
   ballOptimal->hide();
   scene->addItem(ballOptimal);
 
-  metersPerPixel = 0.01;
-  totSimulationSeconds = 0.0;
-  physicsAccumulator = 0.0;
   simulationClock = new QTimer(this);
-  initWidth = 0; // valore di default che però verrà successivamente modificato appena il widget finisce di essere disegnato
 
   // connetto il clock all'update della simulazione
   connect(simulationClock, &QTimer::timeout, this, &SimulationCanvas::updatePhysics);
