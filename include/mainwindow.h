@@ -11,22 +11,27 @@ namespace Ui {
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow {
-  // attiva il sistema meta-object (MOC) di Qt
-  // (signal/slot, proprietà, introspezione runtime) per la classe.
-  Q_OBJECT
+namespace BDraw {
 
-public:
-  explicit MainWindow(QWidget* parent = nullptr);
-  ~MainWindow() override;
+  class MainWindow : public QMainWindow {
+    // attiva il sistema meta-object (MOC) di Qt
+    // (signal/slot, proprietà, introspezione runtime) per la classe.
+    Q_OBJECT
 
-private:
-  const std::string TAG = this->metaObject()->className(); // nome della classe
-  const std::string stdTAG = "[" + TAG + "]";
-  const int initWindowWidth = 854;
-  const int initWindowHeigth = 680;
-  const int controlPanelWidth = 220;
+  public:
+    explicit MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() override;
 
-  Ui::MainWindow* ui = nullptr;
-};
+  private:
+    const std::string TAG = this->metaObject()->className(); // nome della classe
+    const std::string stdTAG = "[" + TAG + "]";
+    const int initWindowWidth = 854;
+    const int initWindowHeigth = 680;
+    const int controlPanelWidth = 220;
+
+    Ui::MainWindow* ui = nullptr;
+  };
+
+} // namespace BDraw
+
 #endif // MAINWINDOW_H

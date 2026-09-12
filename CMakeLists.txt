@@ -52,8 +52,11 @@ set(PROJECT_SOURCES
     src/main.cpp
     src/mainwindow.cpp
     src/simulationCanvas.cpp
+    src/curveUtils.cpp
     include/mainwindow.h
     include/simulationCanvas.h
+    include/curveUtils.h
+    include/constants.h
     include/exprtk.hpp
     mainwindow.ui
     ${TS_FILES}

@@ -1,8 +1,8 @@
 #include "mainwindow.h"
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h> // Necessario per i log colorati
 #include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h> // Necessario per i log colorati
+#include <spdlog/spdlog.h>
 #include <vector>
 
 #include <QApplication>
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  MainWindow w;
+  BDraw::MainWindow w;
   w.show();
 
   return QCoreApplication::exec();
