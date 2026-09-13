@@ -1,14 +1,16 @@
 #include "simulationEngine.h"
+#include "constants.h"
 #include "curveUtils.h"
 
+#include <cmath>
 #include <libassert/assert.hpp>
 #include <spdlog/spdlog.h>
 
 namespace BDraw {
 
   SimulationEngine::SimulationEngine() {
-    state = arma::vec2(arma::fill::zeros);
-    stateOptimal = arma::vec2(arma::fill::zeros);
+    reset();
+
     spdlog::debug("{} SimulationEngine inizializzato correttamente", logTag);
   }
 
@@ -107,9 +109,15 @@ namespace BDraw {
     if (optimalBallFinished == false)
       spdlog::debug("{} x_opt(k + 1) = [{}, {}]^T , sine: {}", logTag, stateOptimal(0), stateOptimal(1), sineOpt);
 
-    mainBallFinished = (s == L);
-    if (!optimalCurvePoints.isEmpty())
-      optimalBallFinished = (sOpt == LOpt); // considero l'avanzare sulla curva ottima solo se essa esiste
+    // Controllo di arrivo con tolleranza cinematica adattiva alla scala di zoom.
+    // Moltiplicando per metersPerPixel (m/px), la tolleranza in metri scala in modo continuo con lo zoom:
+    //   - A 100 px/m (metersPerPixel = 0.01 m/px): kinematicThreshold = 0.01 * 0.01 = 1e-4 m
+    //   - A 10 px/m  (metersPerPixel = 0.1 m/px):  kinematicThreshold = 0.01 * 0.1  = 1e-3 m
+    const double kinematicThreshold = Constants::kinematicBaseThreshold * metersPerPixel;
+
+    mainBallFinished = std::abs(s - L) <= kinematicThreshold;
+    if (!optimalCurvePoints.isEmpty()) // considero l'avanzare sulla curva ottima solo se essa esiste
+      optimalBallFinished = std::abs(sOpt - LOpt) <= kinematicThreshold;
 
     if (mainBallFinished && mainSimulationSeconds == 0.0)
       mainSimulationSeconds = totSimulationSeconds;

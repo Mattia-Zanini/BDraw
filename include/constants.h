@@ -6,6 +6,7 @@ namespace BDraw {
   namespace Constants {
     inline constexpr double gravity = 9.81;                              // accelerazione di gravità (m/s^2)
     inline constexpr double threshold = 1e-6;                            // soglia minima per le operazioni
+    inline constexpr double kinematicBaseThreshold = 0.01;               // frazione di pixel consentita per l'arrivo al traguardo (~0.01 px)
     inline constexpr double minMoveDistance = 1.0;                       // distanza minima fra un campione e l'altro (del disegno libero)
     inline constexpr int margin = 30;                                    // margine dai bordi della scena
     inline constexpr int ballRadius = 6;                                 // raggio grafico dei gravi in pixel
@@ -13,7 +14,7 @@ namespace BDraw {
     inline constexpr double deltaTimeSeconds = 0.016;                    // espresso in secondi
     inline constexpr double maxTimeElapsed = 0.05;                       // soglia di sicurezza per evitare che la simulazione scatti (circa 3 frame persi)
     inline constexpr double fixedSubDT = 0.00416666666666666666;         // ~4.2 ms (240 Hz)
-    inline constexpr double fixedSubDTSquared = fixedSubDT * fixedSubDT; // ~4.2 ms (240 Hz)
+    inline constexpr double fixedSubDTSquared = fixedSubDT * fixedSubDT; // dt^2
   } // namespace Constants
 
 } // namespace BDraw
