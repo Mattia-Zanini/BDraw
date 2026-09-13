@@ -1,4 +1,3 @@
-// cspell:ignore exprtk toms748 pchip
 #include "curveUtils.h"
 
 #include <libassert/assert.hpp>

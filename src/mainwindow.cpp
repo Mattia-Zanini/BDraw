@@ -2,7 +2,7 @@
 #include "simulationCanvas.h"
 #include "ui_mainwindow.h"
 
-#include <libassert/assert.hpp>
+#include <spdlog/spdlog.h>
 
 #include <QCheckBox>
 #include <QHBoxLayout>
@@ -148,13 +148,13 @@ namespace BDraw {
       simulationCanvas->setMetersPerPixel(1.0 / value);
 
       if (simulationCanvas->hasCurve()) {
-        double length = simulationCanvas->getCurveLength();
+        const double length = simulationCanvas->getCurveLength();
         lengthLabel->setText(QString("Lunghezza: %1 m").arg(length, 0, 'f', 2));
 
-        double time = simulationCanvas->computeTheoreticalTime();
+        const double time = simulationCanvas->getTheoreticalTime();
         timeLabel->setText(QString("Tempo stimato: %1 s").arg(time, 0, 'f', 3));
 
-        double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
+        const double bestTimeVal = simulationCanvas->getBestTheoreticalTime();
         bestTimeLabel->setText(QString("Tempo ottimo: %1 s").arg(bestTimeVal, 0, 'f', 3));
       }
     });
@@ -169,15 +169,16 @@ namespace BDraw {
     });
 
     connect(simulationCanvas, &SimulationCanvas::drawingFinished, this, [=] {
-      double time = simulationCanvas->computeTheoreticalTime();
+      const double time = simulationCanvas->getTheoreticalTime();
+
       actualTimeLabel->setText("Tempo effettivo: ---");
       bestActualTimeLabel->setText("Ottimo effettivo: ---");
       timeLabel->setText(QString("Tempo stimato: %1 s").arg(time, 0, 'f', 3));
 
-      double length = simulationCanvas->getCurveLength();
+      const double length = simulationCanvas->getCurveLength();
       lengthLabel->setText(QString("Lunghezza: %1 m").arg(length, 0, 'f', 2));
 
-      double bestTimeVal = simulationCanvas->computeBestTheoreticalTime(simulationCanvas->getEndPoint());
+      const double bestTimeVal = simulationCanvas->getBestTheoreticalTime();
       bestTimeLabel->setText(QString("Tempo ottimo: %1 s").arg(bestTimeVal, 0, 'f', 3));
 
       simulationCanvas->startSimulation();
@@ -190,15 +191,14 @@ namespace BDraw {
     });
 
     connect(simulationCanvas, &SimulationCanvas::simulationFinished, this, [=] {
-      double simTime = simulationCanvas->getSimulationTime();
+      const double simTime = simulationCanvas->getSimulationTime();
       actualTimeLabel->setText(QString("Tempo effettivo: %1 s").arg(simTime, 0, 'f', 3));
 
-      double optSimTime = simulationCanvas->getOptimalSimulationTime();
-      if (optSimTime > 0.0) {
+      const double optSimTime = simulationCanvas->getOptimalSimulationTime();
+      if (optSimTime > 0.0)
         bestActualTimeLabel->setText(QString("Ottimo effettivo: %1 s").arg(optSimTime, 0, 'f', 3));
-      } else {
+      else
         bestActualTimeLabel->setText("Ottimo effettivo: ---");
-      }
     });
 
     // infine imposto il widget centrale sulla MainWindow

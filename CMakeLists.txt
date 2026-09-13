@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-# cspell:ignore AUTOUIC AUTOMOC AUTORCC libassert mainwindow BLAS BINDIR dsymutil Armadillo
-
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
 endif()
@@ -52,9 +50,11 @@ set(PROJECT_SOURCES
     src/main.cpp
     src/mainwindow.cpp
     src/simulationCanvas.cpp
+    src/simulationEngine.cpp
     src/curveUtils.cpp
     include/mainwindow.h
     include/simulationCanvas.h
+    include/simulationEngine.h
     include/curveUtils.h
     include/constants.h
     include/exprtk.hpp

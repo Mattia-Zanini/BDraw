@@ -1,4 +1,3 @@
-// cspell:ignore exprtk toms748 pchip
 #ifndef CURVEUTILS_H
 #define CURVEUTILS_H
 
